@@ -1,0 +1,6 @@
+coverage
+jsonlib2
+nose
+simplejson
+ujson
+yajl
