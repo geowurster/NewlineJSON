@@ -60,9 +60,8 @@ setuptools.setup(
     zip_safe=True,
     keywords='commandline shortcut alias navigation',
     install_requires=install_requires,
-    # entry_points="""
-    #     [console_scripts]
-    #     nlj=newlinejson.cli.nlj:main:
-    #
-    # """
+    entry_points="""
+        [console_scripts]
+        nlj=newlinejson.nlj:main
+    """
 )
