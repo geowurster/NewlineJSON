@@ -4,6 +4,7 @@ Newline delimited JSON I/O that is hot swappable with csv.DictReader/Writer
 
 
 from .core import *
+from . import nlj
 
 
 __version__ = '0.1.0-dev'
