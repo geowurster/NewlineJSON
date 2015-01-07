@@ -12,7 +12,7 @@ import json
 JSON = json
 
 
-__all__ = ['JSON', 'Reader', 'Writer']
+__all__ = ['JSON', 'Reader']
 
 
 class Reader(object):
@@ -21,7 +21,8 @@ class Reader(object):
     Read newline delimited JSON objects
     """
 
-    def __init__(self, f, skiplines=0, skip_failures=False, skip_empty=False, *args, **kwargs):
+    def __init__(self, f, skip_lines=0, skip_failures=False, skip_empty=False, empty_val=None, fail_val=None,
+                 *args, **kwargs):
 
         """
         Read a file containing newline delimited JSON.
@@ -30,13 +31,18 @@ class Reader(object):
         ---------
         f : file
             Handle to an open file object that is open for reading
-        skiplines : int, optional
+        skip_lines : int, optional
             Number of lines to immediately skip
         skip_failures : bool, optional
             If True, exceptions thrown by `json.loads()` will be suppressed and
             the offending line will be ignored
         skip_empty : bool, optional
             If True, skip empty lines
+        fail_val : anything, optional
+            Value to return if `skip_failures=True` and a line cannot be decoded
+        empty_val : anything, optional
+            Value to return if `skip_empty=False` - since an empty line has no
+            corresponding JSON object, something must be returned
         args : *args, optional
             Eats additional positional arguments so the reader can be
             transparently swapped with other readers
@@ -46,12 +52,14 @@ class Reader(object):
         """
 
         self._f = f
-        self.skiplines = skiplines
+        self.skip_lines = skip_lines
         self.skip_failures = skip_failures
         self.skip_empty = skip_empty
         self.line_num = 0
+        self.fail_val = fail_val
+        self.empty_val = empty_val
 
-        for i in range(skiplines):
+        for i in range(skip_lines):
             self.next()
 
     def __iter__(self):
@@ -59,6 +67,24 @@ class Reader(object):
 
     def __next__(self):
         return self.next()
+
+    def _readline(self):
+
+        """
+        Ensure that a stripped line is always returned
+
+        Returns
+        -------
+        str
+            The next stripped line from the file
+        """
+
+        self.line_num += 1
+
+        try:
+            return self._f.__next__().strip()
+        except AttributeError:
+            return self._f.next().strip()
 
     def next(self):
 
@@ -75,74 +101,77 @@ class Reader(object):
 
         try:
 
-            row = self._f.readline()
+            row = self._readline()
             if self.skip_empty:
                 while not row:
-                    row = self._f.readline()
+                    row = self._readline()
+            elif row == '':
+                return self.empty_val
 
-            self.line_num += 1
             return JSON.loads(row)
 
         except ValueError as e:
 
             if not self.skip_failures:
                 raise e
+            else:
+                return self.fail_val
 
 
-class Writer(object):
-
-    """
-    Write newline delimited JSON objects
-    """
-
-    def __init__(self, f, skip_failures=False, delimiter=os.linesep, *args, **kwargs):
-
-        """
-        Read a file containing newline delimited JSON.
-
-        Parameters
-        ---------
-        f : file
-            Handle to an open file object that is open for writing
-        skip_failures : bool, optional
-            If True, exceptions thrown by `json.dumps()` will be suppressed
-            and the offending line will be ignored
-        args : *args
-            Eats additional positional arguments so the reader can be
-            transparently swapped with other readers
-        kwargs : **kwargs
-            Eats additional keyword arguments so the reader can be transparently
-            swapped with other readers
-        """
-
-        self._f = f
-        self.skip_failures = skip_failures
-        self.delimiter = delimiter
-
-    def writerow(self, line):
-
-        """
-        Write a JSON object to the output file.
-
-        Parameters
-        ----------
-        line : dict or list
-            Keys, values, and elements must be an object `json.dumps()` can
-            serialize
-
-        Returns
-        -------
-        True
-            On success
-        """
-
-        try:
-            self._f.write(JSON.dumps(line) + self.delimiter)
-        except Exception as e:
-            if not self.skip_failures:
-                raise e
-
-        return True
+# class Writer(object):
+#
+#     """
+#     Write newline delimited JSON objects
+#     """
+#
+#     def __init__(self, f, skip_failures=False, delimiter=os.linesep, *args, **kwargs):
+#
+#         """
+#         Read a file containing newline delimited JSON.
+#
+#         Parameters
+#         ---------
+#         f : file
+#             Handle to an open file object that is open for writing
+#         skip_failures : bool, optional
+#             If True, exceptions thrown by `json.dumps()` will be suppressed
+#             and the offending line will be ignored
+#         args : *args
+#             Eats additional positional arguments so the reader can be
+#             transparently swapped with other readers
+#         kwargs : **kwargs
+#             Eats additional keyword arguments so the reader can be transparently
+#             swapped with other readers
+#         """
+#
+#         self._f = f
+#         self.skip_failures = skip_failures
+#         self.delimiter = delimiter
+#
+#     def writerow(self, line):
+#
+#         """
+#         Write a JSON object to the output file.
+#
+#         Parameters
+#         ----------
+#         line : dict or list
+#             Keys, values, and elements must be an object `json.dumps()` can
+#             serialize
+#
+#         Returns
+#         -------
+#         True
+#             On success
+#         """
+#
+#         try:
+#             self._f.write(JSON.dumps(line) + self.delimiter)
+#         except Exception as e:
+#             if not self.skip_failures:
+#                 raise e
+#
+#         return True
 #
 #
 # class DictReader(object):
@@ -174,7 +203,7 @@ class Writer(object):
 #             {'field1': 'l1f1', 'field2': 'l1f2', 'field3': 'l1f3'}
 #             >>>
 #             >>> # Same as above but assign new column names
-#             >>> reader = DictReader(f, fieldnames=['f1', 'f2', 'f3'], skiplines=1)
+#             >>> reader = DictReader(f, fieldnames=['f1', 'f2', 'f3'], skip_lines=1)
 #             >>> print(reader.next())
 #             {'f1': 'l1f1', 'f2': 'l1f2', 'f3': 'l1f3'}
 #             >>>
