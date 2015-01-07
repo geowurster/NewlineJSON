@@ -3,6 +3,8 @@ Core functions and classes
 """
 
 
+# from __future__ import unicode_literals
+
 import os
 
 import json
@@ -12,7 +14,7 @@ import json
 JSON = json
 
 
-__all__ = ['JSON', 'Reader']
+__all__ = ['JSON', 'Reader', 'Writer']
 
 
 class Reader(object):
@@ -118,61 +120,73 @@ class Reader(object):
                 return self.fail_val
 
 
-# class Writer(object):
-#
-#     """
-#     Write newline delimited JSON objects
-#     """
-#
-#     def __init__(self, f, skip_failures=False, delimiter=os.linesep, *args, **kwargs):
-#
-#         """
-#         Read a file containing newline delimited JSON.
-#
-#         Parameters
-#         ---------
-#         f : file
-#             Handle to an open file object that is open for writing
-#         skip_failures : bool, optional
-#             If True, exceptions thrown by `json.dumps()` will be suppressed
-#             and the offending line will be ignored
-#         delimiter : str, optional
-#             Newline character to be written after every row
-#         args : *args
-#             Eats additional positional arguments so the reader can be
-#             transparently swapped with other writers
-#         kwargs : **kwargs
-#             Eats additional keyword arguments so the reader can be transparently
-#             swapped with other writers
-#         """
-#
-#         self._f = f
-#         self.skip_failures = skip_failures
-#         self.delimiter = delimiter
-#
-#     def writerow(self, line):
-#
-#         """
-#         Write a JSON object to the output file.
-#
-#         Parameters
-#         ----------
-#         line : dict or list
-#             Keys, values, and elements must be an object `json.dumps()` can
-#             serialize
-#
-#         Returns
-#         -------
-#         True
-#             On success
-#         """
-#
-#         try:
-#             self._f.write(JSON.dumps(line) + self.delimiter)
-#             return True
-#         except Exception as e:
-#             if not self.skip_failures:
-#                 raise e
+class Writer(object):
+
+    """
+    Write newline delimited JSON objects
+    """
+
+    def __init__(self, f, skip_failures=False, delimiter=os.linesep, *args, **kwargs):
+
+        """
+        Read a file containing newline delimited JSON.
+
+        Parameters
+        ---------
+        f : file
+            Handle to an open file object that is open for writing
+        skip_failures : bool, optional
+            If True, exceptions thrown by `json.dumps()` will be suppressed
+            and the offending line will be ignored
+        delimiter : str, optional
+            Newline character to be written after every row
+        args : *args
+            Eats additional positional arguments so the reader can be
+            transparently swapped with other writers
+        kwargs : **kwargs
+            Eats additional keyword arguments so the reader can be transparently
+            swapped with other writers
+        """
+
+        self._f = f
+        self.skip_failures = skip_failures
+        self.delimiter = delimiter
+
+    def writerow(self, line):
+
+        """
+        Write a JSON object to the output file.
+
+        Parameters
+        ----------
+        line : dict or list
+            Keys, values, and elements must be an object `json.dumps()` can
+            serialize
+
+        Returns
+        -------
+        True
+            On success
+        False
+            If `skip_failures=True`
+        """
+
+        try:
+
+            # The built-in `json.dumps()` decodes to `str` so if it fails, try calling the `decode()`
+            # method to force unicode
+            try:
+                self._f.write(JSON.dumps(line) + self.delimiter)
+            except Exception:
+                self._f.write(JSON.dumps(line).decode() + self.delimiter.decode())
+
+            return True
+
+        except Exception as e:
+            if not self.skip_failures:
+                raise e
+            else:
+                return False
 
 #
 #

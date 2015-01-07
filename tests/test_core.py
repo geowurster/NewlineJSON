@@ -28,29 +28,28 @@ JSON_LIBRARIES = [json, simplejson, ujson, yajl]
 
 
 SAMPLE_FILE_CONTENTS = {
-    'list_with_header': os.linesep.join(['["field1","field2","field3"]',
-                                         '["l1f1","l1f2","l1f3"]',
-                                         '["l2f1","l2f2","l3f3"]',
-                                         '["l3f1","l3f2","l3f3"]']),
-    'list_no_header': os.linesep.join(['["l1f1","l1f2","l1f3"]',
-                                       '["l2f1","l2f2","l3f3"]',
-                                       '["l3f1","l3f2","l3f3"]']),
-    'dict_lines': os.linesep.join(['{"field2": "l1f2", "field3": "l1f3", "field1": "l1f1"}',
-                                   '{"field2": "l2f2", "field3": "l3f3", "field1": "l2f1"}',
-                                   '{"field2": "l3f2", "field3": "l3f3", "field1": "l3f1"}'])
+    'list_with_header': os.linesep.join(
+        [json.dumps(i) for i in (["field1", "field2", "field3"],
+                                 ["l1f1", "l1f2", "l1f3"],
+                                 ["l2f1", "l2f2", "l3f3"],
+                                 ["l3f1", "l3f2", "l3f3"])]),
+    'list_no_header': os.linesep.join(
+        [json.dumps(i) for i in (["l1f1", "l1f2", "l1f3"],
+                                 ["l2f1", "l2f2", "l3f3"],
+                                 ["l3f1", "l3f2", "l3f3"])]),
+    'dict_lines': os.linesep.join(
+        [json.dumps(i) for i in ({"field2": "l1f2", "field3": "l1f3", "field1": "l1f1"},
+                                 {"field2": "l2f2", "field3": "l3f3", "field1": "l2f1"},
+                                 {"field2": "l3f2", "field3": "l3f3", "field1": "l3f1"})])
 }
 
 
+# StringIO in Python 2 requires unicode
+if sys.version_info[0] is 2:
+    SAMPLE_FILE_CONTENTS = {unicode(k): unicode(v) for k, v in SAMPLE_FILE_CONTENTS.items()}
+
+
 class TestReader(unittest.TestCase):
-
-    def test_readline(self):
-
-        # The readline method should always return a stripped line
-
-        line = 'words_and_stuff'
-        with StringIO(' ' + line + ' ') as f:
-            reader = newlinejson.Reader(f)
-            self.assertEqual(line, reader._readline())
 
     def test_standard(self):
 
@@ -67,6 +66,15 @@ class TestReader(unittest.TestCase):
                 with StringIO(content) as e_f, StringIO(content) as a_f:
                     for expected, actual in zip(e_f, newlinejson.Reader(a_f)):
                         self.assertEqual(json.loads(expected), actual)
+
+    def test_readline(self):
+
+        # The readline method should always return a stripped line
+
+        line = 'words_and_stuff'
+        with StringIO(' ' + line + ' ') as f:
+            reader = newlinejson.Reader(f)
+            self.assertEqual(line, reader._readline())
 
     def test_skip_lines(self):
 
@@ -169,24 +177,63 @@ class TestReader(unittest.TestCase):
                     self.assertEqual(expected, actual)
 
 
-# class TestWriter(unittest.TestCase):
-#
-#     def test_write_content_types(self):
-#
-#         # Try writing every content type
-#         for json_lib in JSON_LIBRARIES:
-#             newlinejson.JSON = json_lib
-#
-#             for content in SAMPLE_FILE_CONTENTS.values():
-#                 with StringIO() as f:
-#
-#                     writer = newlinejson.Writer(f)
-#                     # Turn test content into a list of lines
-#                     content = [json.loads(l) for l in content.split(os.linesep)]
-#
-#                     # Write each line
-#
-#
+class TestWriter(unittest.TestCase):
+
+    def test_writerow(self):
+
+        # Try writing every content type
+        for json_lib in JSON_LIBRARIES:
+            newlinejson.JSON = json_lib
+
+            for content in SAMPLE_FILE_CONTENTS.values():
+                with StringIO() as f:
+                    writer = newlinejson.Writer(f)
+
+                    # Turn test content into a list of lines
+                    content = [json.loads(l) for l in content.split(os.linesep)]
+
+                    # Write each line
+                    for line in content:
+                        self.assertTrue(writer.writerow(line))
+
+                    # Test each line
+                    f.seek(0)
+                    for actual, expected in zip(f, content):
+                        self.assertEqual(json.loads(actual), expected)
+
+    def test_different_delimiter(self):
+
+        # The user should be able to specify a delimiter of their choice
+
+        new_delim = 'asdfjkl'
+        for content in SAMPLE_FILE_CONTENTS.values():
+            expected_lines = [json.loads(i) for i in content.split(os.linesep)]
+            with StringIO() as f:
+                writer = newlinejson.Writer(f, delimiter=new_delim)
+                for line in expected_lines:
+                    self.assertTrue(writer.writerow(line))
+
+                # Test lines - the writer writes a delimiter to the very end of the file that must be removed in order
+                # to compare
+                f.seek(0)
+                actual = f.read()[:-len(new_delim)]
+                expected = new_delim.join([json.dumps(i) for i in expected_lines])
+                self.assertEqual(actual, expected)
+
+    def test_bad_lines_throw_exception(self):
+
+        # By default an item `json.dumps()` can't serialize will throw an exception
+        with StringIO() as f:
+            writer = newlinejson.Writer(f)
+            self.assertRaises(TypeError, writer.writerow, newlinejson)
+
+    def test_skip_bad_lines(self):
+
+        # Silently skip items are not JSON serializable
+        with StringIO() as f:
+            writer = newlinejson.Writer(f, skip_failures=True)
+            self.assertTrue(writer.writerow([1, 2, 3]))
+            self.assertFalse(writer.writerow(newlinejson))
 
 
 if __name__ == '__main__':
