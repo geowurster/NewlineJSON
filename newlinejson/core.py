@@ -136,12 +136,14 @@ class Reader(object):
 #         skip_failures : bool, optional
 #             If True, exceptions thrown by `json.dumps()` will be suppressed
 #             and the offending line will be ignored
+#         delimiter : str, optional
+#             Newline character to be written after every row
 #         args : *args
 #             Eats additional positional arguments so the reader can be
-#             transparently swapped with other readers
+#             transparently swapped with other writers
 #         kwargs : **kwargs
 #             Eats additional keyword arguments so the reader can be transparently
-#             swapped with other readers
+#             swapped with other writers
 #         """
 #
 #         self._f = f
@@ -167,11 +169,11 @@ class Reader(object):
 #
 #         try:
 #             self._f.write(JSON.dumps(line) + self.delimiter)
+#             return True
 #         except Exception as e:
 #             if not self.skip_failures:
 #                 raise e
-#
-#         return True
+
 #
 #
 # class DictReader(object):

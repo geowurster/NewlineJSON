@@ -55,10 +55,10 @@ class TestReader(unittest.TestCase):
     def test_standard(self):
 
         # Test standard use cases for all file types and JSON libraries
-        for json_library in JSON_LIBRARIES:
+        for json_lib in JSON_LIBRARIES:
 
             # Test with all JSON libraries
-            newlinejson.JSON = json_library
+            newlinejson.JSON = json_lib
 
             # Test with all kinds of content
             for content in SAMPLE_FILE_CONTENTS.values():
@@ -72,7 +72,7 @@ class TestReader(unittest.TestCase):
 
         # Skip the first line and only test against the second
 
-        for json_library in JSON_LIBRARIES:
+        for json_lib in JSON_LIBRARIES:
             for content in SAMPLE_FILE_CONTENTS.values():
 
                 with StringIO(content) as e_f, StringIO(content) as a_f:
@@ -81,7 +81,7 @@ class TestReader(unittest.TestCase):
 
                     # Skip the first line and grab the second line for testing
                     e_f.readline()
-                    expected_line = json_library.loads(e_f.readline().strip())
+                    expected_line = json_lib.loads(e_f.readline().strip())
                     e_f.seek(0)
 
                     # The reader should skip the first line and return the second
@@ -92,8 +92,8 @@ class TestReader(unittest.TestCase):
 
         # Lines that cannot be decoded by JSON should throw an exception by default
 
-        for json_library in JSON_LIBRARIES:
-            newlinejson.JSON = json_library
+        for json_lib in JSON_LIBRARIES:
+            newlinejson.JSON = json_lib
 
             with StringIO('[') as f:
                 reader = newlinejson.Reader(f)
@@ -103,9 +103,9 @@ class TestReader(unittest.TestCase):
 
         # The skip_failures argument should cause a bad line to be skipped and the fail_val to be returned
 
-        for json_library in JSON_LIBRARIES:
+        for json_lib in JSON_LIBRARIES:
 
-            newlinejson.JSON = json_library
+            newlinejson.JSON = json_lib
 
             for fail_val in [None, 1, 1.23, float, int, object, '', str, {}, []]:
                 with StringIO('[') as f:
@@ -115,9 +115,9 @@ class TestReader(unittest.TestCase):
     def test_empty_line(self):
 
         # If skip_empty=False then some user-defined value is returned instead of an empty line
-        for json_library in JSON_LIBRARIES:
+        for json_lib in JSON_LIBRARIES:
 
-            newlinejson.JSON = json_library
+            newlinejson.JSON = json_lib
 
             for empty_val in [None, 1, 1.23, float, int, object, '', str, {}, []]:
                 with StringIO(' ') as f:
@@ -128,21 +128,25 @@ class TestReader(unittest.TestCase):
 
         # Empty lines should be completely skipped
 
-        for json_library in JSON_LIBRARIES:
+        for json_lib in JSON_LIBRARIES:
 
-            newlinejson.JSON = json_library
+            newlinejson.JSON = json_lib
 
             for content in SAMPLE_FILE_CONTENTS.values():
 
                 # Create some new content that has a bunch of empty lines
                 blank = ''
-                content_lines = StringIO(content).readlines() + [blank, blank, blank] + \
-                                StringIO(content).readlines() + [blank]
+                with StringIO(content) as c1, StringIO(content) as c2:
+                    content_lines = c1.readlines() + [blank, blank, blank] + c2.readlines() + [blank]
                 content_lines_expected = [line.strip() for line in content_lines if line != blank]
 
-                with StringIO(os.linesep.join(content_lines)) as f:
-                    for idx, z in enumerate(zip(newlinejson.Reader(f, skip_empty=True),
-                                                StringIO(os.linesep.join(content_lines_expected)))):
+                # At this point content_lines contains some blanks and content_lines_expected contains no blanks
+                # and is what the output should look like
+
+                with StringIO(os.linesep.join(content_lines)) as a_f, \
+                        StringIO(os.linesep.join(content_lines_expected)) as e_f:
+                    reader = newlinejson.Reader(a_f, skip_empty=True)
+                    for idx, z in enumerate(zip(reader, e_f)):
                         actual, expected = z
                         expected = json.loads(expected.strip())
                         self.assertEqual(expected, actual)
@@ -150,6 +154,39 @@ class TestReader(unittest.TestCase):
                     # Make sure no blank lines were read
                     # idx starts at 0 so add 1
                     self.assertEqual(idx + 1, len(content_lines_expected))
+    
+    def test_read_mixed_types(self):
+
+        # Read lines of mixed types
+        content = os.linesep.join([l.strip() for l in SAMPLE_FILE_CONTENTS.values() if l.strip() != ''])
+        for json_lib in JSON_LIBRARIES:
+            newlinejson.JSON = json_lib
+
+            with StringIO(content) as a_f, StringIO(content) as e_f:
+                reader = newlinejson.Reader(a_f)
+                for actual, expected in zip(reader, e_f):
+                    expected = json.loads(expected)
+                    self.assertEqual(expected, actual)
+
+
+# class TestWriter(unittest.TestCase):
+#
+#     def test_write_content_types(self):
+#
+#         # Try writing every content type
+#         for json_lib in JSON_LIBRARIES:
+#             newlinejson.JSON = json_lib
+#
+#             for content in SAMPLE_FILE_CONTENTS.values():
+#                 with StringIO() as f:
+#
+#                     writer = newlinejson.Writer(f)
+#                     # Turn test content into a list of lines
+#                     content = [json.loads(l) for l in content.split(os.linesep)]
+#
+#                     # Write each line
+#
+#
 
 
 if __name__ == '__main__':
