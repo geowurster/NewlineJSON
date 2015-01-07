@@ -162,7 +162,7 @@ class TestReader(unittest.TestCase):
                     # Make sure no blank lines were read
                     # idx starts at 0 so add 1
                     self.assertEqual(idx + 1, len(content_lines_expected))
-    
+
     def test_read_mixed_types(self):
 
         # Read lines of mixed types
