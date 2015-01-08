@@ -38,7 +38,7 @@ with open(os.path.join('newlinejson', '__init__.py')) as f:
             source = line.split('=')[1].strip().replace('"', '').replace("'", '')
 
 setuptools.setup(
-    name='newlinejson',
+    name='NewlineJSON',
     version=version,
     author=author,
     author_email=email,
@@ -50,7 +50,7 @@ setuptools.setup(
     classifiers=[
         'Topic :: Utilities',
         'Intended Audience :: Developers',
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
@@ -58,7 +58,7 @@ setuptools.setup(
     ],
     include_package_data=True,
     zip_safe=True,
-    keywords='commandline shortcut alias navigation',
+    keywords='streaming newline json',
     install_requires=install_requires,
     entry_points="""
         [console_scripts]
