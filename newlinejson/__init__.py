@@ -7,7 +7,7 @@ from .core import *
 from . import nlj
 
 
-__version__ = '0.1.0-dev'
+__version__ = '0.1.0'
 __author__ = 'Kevin Wurster'
 __email__ = 'wursterk@gmail.com'
 __source__ = 'https://github.com/geowurster/NewlineJSON'
