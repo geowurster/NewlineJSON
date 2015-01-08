@@ -13,10 +13,7 @@ except ImportError:
     except ImportError:
         from StringIO import StringIO
 import tempfile
-try:
-    import unittest
-except ImportError:
-    import unittest2 as unittest
+import unittest
 
 import click.testing
 import simplejson

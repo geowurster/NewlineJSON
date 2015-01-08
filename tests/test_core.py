@@ -18,10 +18,7 @@ except ImportError:
     except ImportError:
         from StringIO import StringIO
 import sys
-try:
-    import unittest
-except ImportError:
-    import unittest2 as unittest
+import unittest
 
 import simplejson
 import ujson
