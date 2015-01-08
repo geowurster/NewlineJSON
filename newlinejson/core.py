@@ -3,18 +3,120 @@ Core functions and classes
 """
 
 
-# from __future__ import unicode_literals
-
-import os
-
 import json
+import os
+try:
+    from io import StringIO
+except ImportError:
+    try:
+        from cStringIO import StringIO
+    except ImportError:
+        from StringIO import StringIO
 
 
 # Specify which JSON library to use
 JSON = json
 
 
-__all__ = ['JSON', 'Reader', 'Writer']
+__all__ = ['JSON', 'Reader', 'Writer', 'load', 'loads', 'dump', 'dumps']
+
+
+def load(f, **kwargs):
+
+    """
+    Load an entire file of newline delimited JSON into a list where each element
+    is a line.  Only use on small files.
+
+    Parameters
+    ----------
+    f : file
+        Open file object from which newline JSON is read
+    kwargs : **kwargs, optional
+        Additional keyword arguments for the `Reader()` class
+
+    Returns
+    -------
+    list
+        One decoded JSON element per line in the input file
+    """
+
+    return [i for i in Reader(f, **kwargs)]
+
+
+def loads(string, **kwargs):
+
+    """
+    Same as `load()` but the input is a string instead of a file object.
+
+    Parameters
+    ----------
+    string : str
+        Formatted string to be parsed
+    kwargs : **kwargs, optional
+        Additional keyword arguments for the `Reader()` class
+
+    Returns
+    -------
+    list
+        One decoded JSON element per line in the input string
+    """
+
+    with StringIO(string) as f:
+        return load(f, **kwargs)
+
+
+def dump(line_list, f, **kwargs):
+
+    """
+    Write a list of JSON objects to an output file one line at a time.
+
+    Parameters
+    ----------
+    line_list : list
+        A list of JSON objects to be written
+    f : file
+        Handle to an open writable file object
+    kwargs : **kwargs, optional
+        Additional keyword arguments for the `Writer()` class
+
+    Returns
+    -------
+    True
+        On success
+    """
+
+    writer = Writer(f, **kwargs)
+    for line in line_list:
+        writer.writerow(line)
+
+    return True
+
+
+def dumps(line_list, **kwargs):
+
+    """
+    Same as `dump()` but a string is returned instead of writing each line to
+    an output file.
+
+    Parameters
+    ----------
+    line_list : list
+        A list of JSON objects to be written
+    kwargs : **kwargs, optional
+        Additional keyword arguments for the `Writer()` class
+
+    Returns
+    -------
+    str
+        Newline delimited JSON string
+    """
+
+    with StringIO() as f:
+        writer = Writer(f, **kwargs)
+        for line in line_list:
+            writer.writerow(line)
+        f.seek(0)
+        return f.read()
 
 
 class Reader(object):
@@ -23,8 +125,7 @@ class Reader(object):
     Read newline delimited JSON objects
     """
 
-    def __init__(self, f, skip_lines=0, skip_failures=False, skip_empty=False, empty_val=None, fail_val=None,
-                 *args, **kwargs):
+    def __init__(self, f, skip_lines=0, skip_failures=False, skip_empty=True, empty_val=None, fail_val=None, **kwargs):
 
         """
         Read a file containing newline delimited JSON.
@@ -45,12 +146,8 @@ class Reader(object):
         empty_val : anything, optional
             Value to return if `skip_empty=False` - since an empty line has no
             corresponding JSON object, something must be returned
-        args : *args, optional
-            Eats additional positional arguments so the reader can be
-            transparently swapped with other readers
         kwargs : **kwargs, optional
-            Eats additional keyword arguments so the reader can be transparently
-            swapped with other readers
+            Additional keyword arguments for `json.loads()`
         """
 
         self._f = f
@@ -60,6 +157,7 @@ class Reader(object):
         self.line_num = 0
         self.fail_val = fail_val
         self.empty_val = empty_val
+        self.kwargs = kwargs
 
         for i in range(skip_lines):
             self.next()
@@ -110,7 +208,7 @@ class Reader(object):
             elif row == '':
                 return self.empty_val
 
-            return JSON.loads(row)
+            return JSON.loads(row, **self.kwargs)
 
         except ValueError as e:
 
@@ -134,23 +232,20 @@ class Writer(object):
         Parameters
         ---------
         f : file
-            Handle to an open file object that is open for writing
+            Handle to an open writable file-like object
         skip_failures : bool, optional
             If True, exceptions thrown by `json.dumps()` will be suppressed
             and the offending line will be ignored
         delimiter : str, optional
             Newline character to be written after every row
-        args : *args
-            Eats additional positional arguments so the reader can be
-            transparently swapped with other writers
         kwargs : **kwargs
-            Eats additional keyword arguments so the reader can be transparently
-            swapped with other writers
+            Additional keyword arguments for `json.dumps()`
         """
 
         self._f = f
         self.skip_failures = skip_failures
         self.delimiter = delimiter
+        self.kwargs = kwargs
 
     def writerow(self, line):
 
@@ -176,9 +271,9 @@ class Writer(object):
             # The built-in `json.dumps()` decodes to `str` so if it fails, try calling the `decode()`
             # method to force unicode
             try:
-                self._f.write(JSON.dumps(line) + self.delimiter)
+                self._f.write(JSON.dumps(line, **self.kwargs) + self.delimiter)
             except Exception:
-                self._f.write(JSON.dumps(line).decode() + self.delimiter.decode())
+                self._f.write(JSON.dumps(line, **self.kwargs).decode() + self.delimiter)
 
             return True
 

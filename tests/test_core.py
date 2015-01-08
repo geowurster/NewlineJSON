@@ -12,7 +12,10 @@ import os
 try:
     from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    try:
+        from cStringIO import StringIO
+    except ImportError:
+        from StringIO import StringIO
 import sys
 import unittest
 
@@ -54,6 +57,10 @@ class TestReader(unittest.TestCase):
     def test_standard(self):
 
         # Test standard use cases for all file types and JSON libraries
+
+        # Be sure the innermost loop actually executed
+        test_executed = False
+
         for json_lib in JSON_LIBRARIES:
 
             # Test with all JSON libraries
@@ -66,10 +73,13 @@ class TestReader(unittest.TestCase):
                 with StringIO(content) as e_f, StringIO(content) as a_f:
                     for expected, actual in zip(e_f, newlinejson.Reader(a_f)):
                         self.assertEqual(json.loads(expected), actual)
+                        test_executed = True
+
+        self.assertTrue(test_executed)
 
     def test_readline(self):
 
-        # The readline method should always return a stripped line
+        # Does not handle any decoding - just reading and stripping a line
 
         line = 'words_and_stuff'
         with StringIO(' ' + line + ' ') as f:
@@ -79,6 +89,9 @@ class TestReader(unittest.TestCase):
     def test_skip_lines(self):
 
         # Skip the first line and only test against the second
+
+        # Be sure the innermost loop actually executed
+        test_executed = False
 
         for json_lib in JSON_LIBRARIES:
             for content in SAMPLE_FILE_CONTENTS.values():
@@ -95,6 +108,9 @@ class TestReader(unittest.TestCase):
                     # The reader should skip the first line and return the second
                     actual_line = reader.next()
                     self.assertEqual(expected_line, actual_line)
+                    test_executed = True
+
+        self.assertTrue(test_executed)
 
     def test_bad_line_exception(self):
 
@@ -136,10 +152,11 @@ class TestReader(unittest.TestCase):
 
         # Empty lines should be completely skipped
 
+        # Be sure the innermost loop actually executed
+        test_executed = False
+
         for json_lib in JSON_LIBRARIES:
-
             newlinejson.JSON = json_lib
-
             for content in SAMPLE_FILE_CONTENTS.values():
 
                 # Create some new content that has a bunch of empty lines
@@ -154,18 +171,26 @@ class TestReader(unittest.TestCase):
                 with StringIO(os.linesep.join(content_lines)) as a_f, \
                         StringIO(os.linesep.join(content_lines_expected)) as e_f:
                     reader = newlinejson.Reader(a_f, skip_empty=True)
+                    idx = None
                     for idx, z in enumerate(zip(reader, e_f)):
                         actual, expected = z
                         expected = json.loads(expected.strip())
                         self.assertEqual(expected, actual)
+                        test_executed = True
 
                     # Make sure no blank lines were read
                     # idx starts at 0 so add 1
                     self.assertEqual(idx + 1, len(content_lines_expected))
 
+        self.assertTrue(test_executed)
+
     def test_read_mixed_types(self):
 
         # Read lines of mixed types
+
+        # Be sure the innermost loop actually executed
+        test_executed = False
+
         content = os.linesep.join([l.strip() for l in SAMPLE_FILE_CONTENTS.values() if l.strip() != ''])
         for json_lib in JSON_LIBRARIES:
             newlinejson.JSON = json_lib
@@ -175,6 +200,9 @@ class TestReader(unittest.TestCase):
                 for actual, expected in zip(reader, e_f):
                     expected = json.loads(expected)
                     self.assertEqual(expected, actual)
+                    test_executed = True
+
+        self.assertTrue(test_executed)
 
 
 class TestWriter(unittest.TestCase):
@@ -182,6 +210,10 @@ class TestWriter(unittest.TestCase):
     def test_writerow(self):
 
         # Try writing every content type
+
+        # Be sure the innermost loop actually executed
+        test_executed = False
+
         for json_lib in JSON_LIBRARIES:
             newlinejson.JSON = json_lib
 
@@ -200,12 +232,15 @@ class TestWriter(unittest.TestCase):
                     f.seek(0)
                     for actual, expected in zip(f, content):
                         self.assertEqual(json.loads(actual), expected)
+                        test_executed = True
+
+        self.assertTrue(test_executed)
 
     def test_different_delimiter(self):
 
         # The user should be able to specify a delimiter of their choice
 
-        new_delim = 'asdfjkl'
+        new_delim = 'a_s_d_f_j_k_l'
         for content in SAMPLE_FILE_CONTENTS.values():
             expected_lines = [json.loads(i) for i in content.split(os.linesep)]
             with StringIO() as f:
@@ -234,6 +269,80 @@ class TestWriter(unittest.TestCase):
             writer = newlinejson.Writer(f, skip_failures=True)
             self.assertTrue(writer.writerow([1, 2, 3]))
             self.assertFalse(writer.writerow(newlinejson))
+
+
+def test_load():
+
+    # Test for newlinejson.core.load()
+    for json_lib in JSON_LIBRARIES:
+        newlinejson.JSON = json_lib
+        for content in SAMPLE_FILE_CONTENTS.values():
+            with StringIO(content) as a_f, StringIO(content) as e_f:
+                actual = newlinejson.load(a_f)
+                expected = [line for line in newlinejson.Reader(e_f)]
+                assert expected == actual
+
+
+def test_loads():
+
+    # Test for newlinejson.core.loads()
+    for json_lib in JSON_LIBRARIES:
+        newlinejson.JSON = json_lib
+        for content in SAMPLE_FILE_CONTENTS.values():
+            with StringIO(content) as f:
+                actual = newlinejson.loads(content)
+                expected = [line for line in newlinejson.Reader(f)]
+                assert expected == actual
+
+
+def test_dump():
+
+    # Test for newlinejson.core.dump()
+
+    # Prep by setting the JSON library, loading the test content into a file object so it can be read and decoded
+    # so that it can then be written again by the function being tested
+    for json_lib in JSON_LIBRARIES:
+        newlinejson.JSON = json_lib
+        for content in SAMPLE_FILE_CONTENTS.values():
+            with StringIO(content) as decode_f, StringIO() as target_f:
+
+                # Convert the test content to a list of JSON objects
+                line_list = [line for line in newlinejson.Reader(decode_f)]
+
+                # Write the line list to the test target file - this should return True
+                assert newlinejson.dump(line_list, target_f)
+                target_f.seek(0)
+
+                # The written content should match the original content
+                actual = target_f.read().strip()
+                expected = content.strip()
+                assert expected == actual
+
+
+def test_dumps():
+
+    # Test for newlinejson.core.dump()
+
+    # Be sure the innermost loop actually executed
+    test_executed = False
+
+    for json_lib in JSON_LIBRARIES:
+        newlinejson.JSON = json_lib
+        for content in SAMPLE_FILE_CONTENTS.values():
+            with StringIO(content) as decode_f:
+
+                # Convert the test content to a list of JSON objects
+                line_list = [line for line in newlinejson.Reader(decode_f)]
+
+                # The logical test would be to do a string comparison between the output and the original
+                # input lines processed into a string but that test fails every so often so instead string
+                # is parsed with the reader and each line is compared individually
+                with StringIO(newlinejson.dumps(line_list)) as actual_f:
+                    for expected, actual in zip(line_list, newlinejson.Reader(actual_f)):
+                        assert expected == actual
+                        test_executed = True
+
+    assert test_executed
 
 
 if __name__ == '__main__':

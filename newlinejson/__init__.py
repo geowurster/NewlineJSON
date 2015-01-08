@@ -1,5 +1,5 @@
 """
-Newline delimited JSON I/O that is hot swappable with csv.DictReader/Writer
+Streaming newline delimited JSON I/O
 """
 
 

@@ -9,6 +9,13 @@ import tempfile
 import unittest
 
 import click.testing
+try:
+    from io import StringIO
+except ImportError:
+    try:
+        from cStringIO import StringIO
+    except ImportError:
+        from StringIO import StringIO
 import simplejson
 import ujson
 import yajl
@@ -106,4 +113,10 @@ class TestCat(unittest.TestCase):
 
         result = self.runner.invoke(nlj.cat, [self.tempfile.name])
         self.assertEqual(0, result.exit_code)
-        self.assertEqual(result.output.strip(), os.linesep.join([json.dumps(l) for l in lines]).strip())
+
+        # The logical test would be to do a string comparison between the output and the original input lines
+        # processed into a string but that test fails every so often so instead string is parsed with the reader
+        # and each line is compared individually
+        with StringIO(result.output.strip()) as decode_f:
+            for expected, actual in zip(newlinejson.Reader(decode_f), lines):
+                self.assertDictEqual(expected, actual)
