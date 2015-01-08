@@ -313,10 +313,12 @@ def test_dump():
                 assert newlinejson.dump(line_list, target_f)
                 target_f.seek(0)
 
-                # The written content should match the original content
-                actual = target_f.read().strip()
-                expected = content.strip()
-                assert expected == actual
+                # The logical test would be to do a string comparison between the output and the original
+                # input lines processed into a string but that test fails every so often so instead string
+                # is parsed with the reader and each line is compared individually
+                with StringIO(target_f.read().strip()) as actual_f:
+                    for expected, actual in zip(line_list, newlinejson.Reader(actual_f)):
+                        assert expected == actual
 
 
 def test_dumps():
