@@ -42,7 +42,7 @@ setuptools.setup(
     version=version,
     author=author,
     author_email=email,
-    description="Newline delimited JSON I/O that is hot swappable with csv.DictReader/Writer",
+    description="Streaming newline delimited JSON I/O",
     long_description=readme,
     url=source,
     license=license,
