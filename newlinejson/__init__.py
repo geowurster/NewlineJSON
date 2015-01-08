@@ -8,7 +8,6 @@ from . import nlj
 
 
 __version__ = '0.1.0-dev'
-__release__ = '2015-01-05'
 __author__ = 'Kevin Wurster'
 __email__ = 'wursterk@gmail.com'
 __source__ = 'https://github.com/geowurster/NewlineJSON'
