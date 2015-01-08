@@ -1,5 +1,5 @@
 """
-Unittests for NewlineJSON
+Unittests for newlinejson
 """
 
 

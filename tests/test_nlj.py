@@ -5,10 +5,6 @@ Unittests for newlinejson.nlj
 
 import json
 import os
-import tempfile
-import unittest
-
-import click.testing
 try:
     from io import StringIO
 except ImportError:
@@ -16,6 +12,13 @@ except ImportError:
         from cStringIO import StringIO
     except ImportError:
         from StringIO import StringIO
+import tempfile
+try:
+    import unittest
+except ImportError:
+    import unittest2 as unittest
+
+import click.testing
 import simplejson
 import ujson
 import yajl

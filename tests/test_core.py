@@ -8,6 +8,7 @@ Unittests for newlinejson.core
 
 from __future__ import unicode_literals
 
+import json
 import os
 try:
     from io import StringIO
@@ -17,9 +18,11 @@ except ImportError:
     except ImportError:
         from StringIO import StringIO
 import sys
-import unittest
+try:
+    import unittest
+except ImportError:
+    import unittest2 as unittest
 
-import json
 import simplejson
 import ujson
 import yajl
