@@ -295,56 +295,67 @@ def test_loads():
                 assert expected == actual
 
 
-def test_dump():
+class TestDump(unittest.TestCase):
 
-    # Test for newlinejson.core.dump()
+    def test_wrong_type(self):
 
-    # Prep by setting the JSON library, loading the test content into a file object so it can be read and decoded
-    # so that it can then be written again by the function being tested
-    for json_lib in JSON_LIBRARIES:
-        newlinejson.JSON = json_lib
-        for content in SAMPLE_FILE_CONTENTS.values():
-            with StringIO(content) as decode_f, StringIO() as target_f:
+        self.assertRaises(TypeError, newlinejson.dump, None, None)
 
-                # Convert the test content to a list of JSON objects
-                line_list = [line for line in newlinejson.Reader(decode_f)]
+    def test_dump(self):
 
-                # Write the line list to the test target file - this should return True
-                assert newlinejson.dump(line_list, target_f)
-                target_f.seek(0)
+        # Test for newlinejson.core.dump()
 
-                # The logical test would be to do a string comparison between the output and the original
-                # input lines processed into a string but that test fails every so often so instead string
-                # is parsed with the reader and each line is compared individually
-                with StringIO(target_f.read().strip()) as actual_f:
-                    for expected, actual in zip(line_list, newlinejson.Reader(actual_f)):
-                        assert expected == actual
+        # Prep by setting the JSON library, loading the test content into a file object so it can be read and decoded
+        # so that it can then be written again by the function being tested
+        for json_lib in JSON_LIBRARIES:
+            newlinejson.JSON = json_lib
+            for content in SAMPLE_FILE_CONTENTS.values():
+                with StringIO(content) as decode_f, StringIO() as target_f:
+
+                    # Convert the test content to a list of JSON objects
+                    line_list = [line for line in newlinejson.Reader(decode_f)]
+
+                    # Write the line list to the test target file - this should return True
+                    self.assertTrue(newlinejson.dump(line_list, target_f))
+                    target_f.seek(0)
+
+                    # The logical test would be to do a string comparison between the output and the original
+                    # input lines processed into a string but that test fails every so often so instead string
+                    # is parsed with the reader and each line is compared individually
+                    with StringIO(target_f.read().strip()) as actual_f:
+                        for expected, actual in zip(line_list, newlinejson.Reader(actual_f)):
+                            self.assertEqual(expected, actual)
 
 
-def test_dumps():
+class TestDumps(unittest.TestCase):
 
-    # Test for newlinejson.core.dump()
+    def test_wrong_type(self):
 
-    # Be sure the innermost loop actually executed
-    test_executed = False
+        self.assertRaises(TypeError, newlinejson.dumps, None)
 
-    for json_lib in JSON_LIBRARIES:
-        newlinejson.JSON = json_lib
-        for content in SAMPLE_FILE_CONTENTS.values():
-            with StringIO(content) as decode_f:
+    def test_dumps(self):
 
-                # Convert the test content to a list of JSON objects
-                line_list = [line for line in newlinejson.Reader(decode_f)]
+        # Test for newlinejson.core.dump()
 
-                # The logical test would be to do a string comparison between the output and the original
-                # input lines processed into a string but that test fails every so often so instead string
-                # is parsed with the reader and each line is compared individually
-                with StringIO(newlinejson.dumps(line_list)) as actual_f:
-                    for expected, actual in zip(line_list, newlinejson.Reader(actual_f)):
-                        assert expected == actual
-                        test_executed = True
+        # Be sure the innermost loop actually executed
+        test_executed = False
 
-    assert test_executed
+        for json_lib in JSON_LIBRARIES:
+            newlinejson.JSON = json_lib
+            for content in SAMPLE_FILE_CONTENTS.values():
+                with StringIO(content) as decode_f:
+
+                    # Convert the test content to a list of JSON objects
+                    line_list = [line for line in newlinejson.Reader(decode_f)]
+
+                    # The logical test would be to do a string comparison between the output and the original
+                    # input lines processed into a string but that test fails every so often so instead string
+                    # is parsed with the reader and each line is compared individually
+                    with StringIO(newlinejson.dumps(line_list)) as actual_f:
+                        for expected, actual in zip(line_list, newlinejson.Reader(actual_f)):
+                            self.assertEquals(expected, actual)
+                            test_executed = True
+        self.assertTrue(test_executed)
 
 
 if __name__ == '__main__':

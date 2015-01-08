@@ -12,10 +12,13 @@ except ImportError:
         from cStringIO import StringIO
     except ImportError:
         from StringIO import StringIO
+import sys
 
 
 # Specify which JSON library to use
 JSON = json
+
+PY3 = sys.version_info[0] == 3
 
 
 __all__ = ['JSON', 'Reader', 'Writer', 'load', 'loads', 'dump', 'dumps']
@@ -61,6 +64,9 @@ def loads(string, **kwargs):
         One decoded JSON element per line in the input string
     """
 
+    if not PY3:
+        string = string.decode()
+
     with StringIO(string) as f:
         return load(f, **kwargs)
 
@@ -72,7 +78,7 @@ def dump(line_list, f, **kwargs):
 
     Parameters
     ----------
-    line_list : list
+    line_list : list, tuple
         A list of JSON objects to be written
     f : file
         Handle to an open writable file object
@@ -84,6 +90,9 @@ def dump(line_list, f, **kwargs):
     True
         On success
     """
+
+    if not isinstance(line_list, (list, tuple)):
+        raise TypeError("Input JSON objects must be in a list or tuple")
 
     writer = Writer(f, **kwargs)
     for line in line_list:
@@ -100,7 +109,7 @@ def dumps(line_list, **kwargs):
 
     Parameters
     ----------
-    line_list : list
+    line_list : list, tuple
         A list of JSON objects to be written
     kwargs : **kwargs, optional
         Additional keyword arguments for the `Writer()` class
@@ -110,6 +119,9 @@ def dumps(line_list, **kwargs):
     str
         Newline delimited JSON string
     """
+
+    if not isinstance(line_list, (list, tuple)):
+        raise TypeError("Input JSON objects must be in a list or tuple")
 
     with StringIO() as f:
         writer = Writer(f, **kwargs)
