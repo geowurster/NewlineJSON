@@ -183,7 +183,7 @@ def cat(ctx, input_file, reader_option, writer_option):
 
         writer = newlinejson.Writer(sys.stdout, **writer_option)
         for line in newlinejson.Reader(input_file, **reader_option):
-            writer.writerow(line)
+            writer.write(line)
         sys.exit(0)
 
     except Exception as e:

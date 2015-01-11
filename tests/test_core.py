@@ -226,7 +226,7 @@ class TestWriter(unittest.TestCase):
 
                     # Write each line
                     for line in content:
-                        self.assertTrue(writer.writerow(line))
+                        self.assertTrue(writer.write(line))
 
                     # Test each line
                     f.seek(0)
@@ -246,7 +246,7 @@ class TestWriter(unittest.TestCase):
             with StringIO() as f:
                 writer = newlinejson.Writer(f, delimiter=new_delim)
                 for line in expected_lines:
-                    self.assertTrue(writer.writerow(line))
+                    self.assertTrue(writer.write(line))
 
                 # Test lines - the writer writes a delimiter to the very end of the file that must be removed in order
                 # to compare
@@ -260,15 +260,15 @@ class TestWriter(unittest.TestCase):
         # By default an item `json.dumps()` can't serialize will throw an exception
         with StringIO() as f:
             writer = newlinejson.Writer(f)
-            self.assertRaises(TypeError, writer.writerow, newlinejson)
+            self.assertRaises(TypeError, writer.write, newlinejson)
 
     def test_skip_bad_lines(self):
 
         # Silently skip items are not JSON serializable
         with StringIO() as f:
             writer = newlinejson.Writer(f, skip_failures=True)
-            self.assertTrue(writer.writerow([1, 2, 3]))
-            self.assertFalse(writer.writerow(newlinejson))
+            self.assertTrue(writer.write([1, 2, 3]))
+            self.assertFalse(writer.write(newlinejson))
 
 
 def test_load():
