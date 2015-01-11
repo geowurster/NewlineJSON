@@ -3,6 +3,7 @@ Core functions and classes
 """
 
 
+import csv
 import json
 import os
 try:
@@ -15,13 +16,98 @@ except ImportError:
 import sys
 
 
-# Specify which JSON library to use
+# Specify which JSON library to use.  Used everywhere JSON encoding/decoding happens.as
+# Allows the user to use ujson, simplejson, yajl, etc. instead of the built in library.
 JSON = json
 
+
+# Figure out if running on Python3
 PY3 = sys.version_info[0] == 3
 
 
-__all__ = ['JSON', 'Reader', 'Writer', 'load', 'loads', 'dump', 'dumps']
+__all__ = [
+    'JSON',
+    'get_reader', 'get_writer',
+    'load', 'loads', 'dump', 'dumps',
+    'Reader', 'Writer',
+    'DictReader',
+    'DictWriter',
+    'ListWriter'
+]
+
+
+def get_reader(name):
+
+    """
+    Get a reader class by name.  Primarily used by commandline utilities.
+
+    Supported Readers
+    -----------------
+    csv  --> csv.DictReader
+    json --> newlinejson.Reader
+    newlinejson --> newlinejson.Reader
+    dictwriter  --> newlinejson.DictReader
+
+    Parameters
+    ----------
+    name : str
+        Name of reader as string.
+
+    Returns
+    -------
+    object
+
+    Raises
+    ------
+    ValueError
+        Unrecognized reader name.
+    """
+
+    name = name.lower()
+    if name == 'reader':
+        return Reader
+    elif name == 'dictreader':
+        return DictReader
+    elif name == 'csv':
+        return csv.DictReader
+    else:
+        raise ValueError("Invalid reader: {name}".format(name=name))
+
+
+def get_writer(name):
+
+    """
+    Get a writer class by name.  Primarily used by commandline utilities.
+
+    Supported Writers
+    -----------------
+    csv  --> csv.DictWriter
+    json --> newlinejson.Writer
+    newlinejson --> newlinejson.Writer
+    dictwriter  --> newlinejson.DictWriter
+
+    Parameters
+    ----------
+    name : str
+        Name of writer as string.
+
+    Returns
+    -------
+    object
+
+    Raises
+    ------
+    ValueError
+        Unrecognized writer name.
+    """
+
+    name = name.lower()
+    if name in ('newlinejson', 'json'):
+        return Writer
+    elif name == 'csv':
+        return csv.DictWriter
+    else:
+        raise ValueError()
 
 
 def load(f, **kwargs):
@@ -33,14 +119,14 @@ def load(f, **kwargs):
     Parameters
     ----------
     f : file
-        Open file object from which newline JSON is read
+        Open file object from which newline JSON is read.
     kwargs : **kwargs, optional
-        Additional keyword arguments for the `Reader()` class
+        Additional keyword arguments for the `Reader()` class.
 
     Returns
     -------
     list
-        One decoded JSON element per line in the input file
+        One decoded JSON element per line in the input file.
     """
 
     return [i for i in Reader(f, **kwargs)]
@@ -56,12 +142,12 @@ def loads(string, **kwargs):
     string : str
         Formatted string to be parsed
     kwargs : **kwargs, optional
-        Additional keyword arguments for the `Reader()` class
+        Additional keyword arguments for the `Reader()` class.
 
     Returns
     -------
     list
-        One decoded JSON element per line in the input string
+        One decoded JSON element per line in the input string.
     """
 
     if not PY3:
@@ -79,11 +165,11 @@ def dump(line_list, f, **kwargs):
     Parameters
     ----------
     line_list : list, tuple
-        A list of JSON objects to be written
+        A list of JSON objects to be written.
     f : file
-        Handle to an open writable file object
+        Handle to an open writable file object.
     kwargs : **kwargs, optional
-        Additional keyword arguments for the `Writer()` class
+        Additional keyword arguments for the `Writer()` class.
 
     Returns
     -------
@@ -96,7 +182,7 @@ def dump(line_list, f, **kwargs):
 
     writer = Writer(f, **kwargs)
     for line in line_list:
-        writer.writerow(line)
+        writer.write(line)
 
     return True
 
@@ -110,14 +196,14 @@ def dumps(line_list, **kwargs):
     Parameters
     ----------
     line_list : list, tuple
-        A list of JSON objects to be written
+        A list of JSON objects to be encoded to a string.
     kwargs : **kwargs, optional
-        Additional keyword arguments for the `Writer()` class
+        Additional keyword arguments for the `Writer()` class.
 
     Returns
     -------
     str
-        Newline delimited JSON string
+        Newline delimited JSON string.
     """
 
     if not isinstance(line_list, (list, tuple)):
@@ -126,7 +212,7 @@ def dumps(line_list, **kwargs):
     with StringIO() as f:
         writer = Writer(f, **kwargs)
         for line in line_list:
-            writer.writerow(line)
+            writer.write(line)
         f.seek(0)
         return f.read()
 
@@ -134,10 +220,11 @@ def dumps(line_list, **kwargs):
 class Reader(object):
 
     """
-    Read newline delimited JSON objects
+    Stream newline delimited JSON.
     """
 
-    def __init__(self, f, skip_lines=0, skip_failures=False, skip_empty=True, empty_val=None, fail_val=None, **kwargs):
+    def __init__(self, f, skip_lines=0, skip_failures=False, skip_empty=True, empty_val=None, fail_val=None,
+                 *args, **kwargs):
 
         """
         Read a file containing newline delimited JSON.
@@ -145,21 +232,24 @@ class Reader(object):
         Parameters
         ---------
         f : file
-            Handle to an open file object that is open for reading
+            Handle to an open file object that is open for reading.
         skip_lines : int, optional
-            Number of lines to immediately skip
+            Number of lines to immediately skip.
         skip_failures : bool, optional
-            If True, exceptions thrown by `json.loads()` will be suppressed and
-            the offending line will be ignored
+            If True, exceptions thrown by `newlinejson.JSON.loads()` will be
+            suppressed and the offending line will be ignored.
         skip_empty : bool, optional
-            If True, skip empty lines
+            If True, skip empty lines.
         fail_val : anything, optional
-            Value to return if `skip_failures=True` and a line cannot be decoded
+            Value to return if `skip_failures=True` and a line cannot be decoded.
         empty_val : anything, optional
             Value to return if `skip_empty=False` - since an empty line has no
-            corresponding JSON object, something must be returned
+            corresponding JSON object, something must be returned.
+        args : *args, optional
+            Eats additional positional arguments so this class can be
+            transparently swapped with other readers.
         kwargs : **kwargs, optional
-            Additional keyword arguments for `json.loads()`
+            Additional keyword arguments for `newlinejson.JSON.loads()`.
         """
 
         self._f = f
@@ -183,12 +273,12 @@ class Reader(object):
     def _readline(self):
 
         """
-        Ensure that a stripped line is always returned
+        Handle Python3 `__next__()` vs. `next()`.
 
         Returns
         -------
         str
-            The next stripped line from the file
+            The next stripped line from the file.
         """
 
         self.line_num += 1
@@ -233,7 +323,7 @@ class Reader(object):
 class Writer(object):
 
     """
-    Write newline delimited JSON objects
+    Write newline delimited JSON.
     """
 
     def __init__(self, f, skip_failures=False, delimiter=os.linesep, *args, **kwargs):
@@ -244,14 +334,17 @@ class Writer(object):
         Parameters
         ---------
         f : file
-            Handle to an open writable file-like object
+            Handle to an open writable file-like object.
         skip_failures : bool, optional
-            If True, exceptions thrown by `json.dumps()` will be suppressed
-            and the offending line will be ignored
+            If True, exceptions thrown by `newlinejson.JSON.dumps()` will be
+            suppressed and the offending line will be ignored.
         delimiter : str, optional
-            Newline character to be written after every row
-        kwargs : **kwargs
-            Additional keyword arguments for `json.dumps()`
+            Newline character to be written after every row.
+        args : *args, optional
+            Eats additional positional arguments so this class can be
+            transparently swapped with other writers.
+        kwargs : **kwargs, optional
+            Additional keyword arguments for `newlinejson.JSON.dumps()`.
         """
 
         self._f = f
@@ -259,16 +352,15 @@ class Writer(object):
         self.delimiter = delimiter
         self.kwargs = kwargs
 
-    def writerow(self, line):
+    def write(self, line):
 
         """
         Write a JSON object to the output file.
 
         Parameters
         ----------
-        line : dict or list
-            Keys, values, and elements must be an object `json.dumps()` can
-            serialize
+        line : dict, list, or tuple
+            Anything `newlinejson.JSON.dumps()` can serialize to a string
 
         Returns
         -------
@@ -281,7 +373,7 @@ class Writer(object):
         try:
 
             # The built-in `json.dumps()` decodes to `str` so if it fails, try calling the `decode()`
-            # method to force unicode
+            # method to force unicode.  Other readers could exhibit similar problems.
             try:
                 self._f.write(JSON.dumps(line, **self.kwargs) + self.delimiter)
             except Exception:
@@ -295,273 +387,337 @@ class Writer(object):
             else:
                 return False
 
-#
-#
-# class DictReader(object):
-#
-#     """
-#     Read newline delimited JSON like `csv.DictReader()`
-#     """
-#
-#     def __init__(self, f, fieldnames=None, restkey=None, restval=None, *args, **kwargs):
-#
-#         """
-#         Newline delimited JSON that is hot-swappable with `csv.DictReader`.
-#
-#         The input rows are expected to be lists of the same length or
-#         dictionaries containing the same keys.  If `fieldnames` are supplied
-#         then only specific fields will be read.
-#
-#         Examples:
-#
-#             >>> from StringIO import StringIO
-#             >>>
-#             >>> # Lists with header
-#             >>> f = StringIO('["field1","field2","field3"]' + \
-#                              '["l1f1","l1f2","l1f3"]' + \
-#                              '["l2f1","l2f2","l3f3"]' + \
-#                              '["l3f1","l3f2","l3f3"]')
-#             >>> reader = DictReader(f)
-#             >>> print(reader.next())
-#             {'field1': 'l1f1', 'field2': 'l1f2', 'field3': 'l1f3'}
-#             >>>
-#             >>> # Same as above but assign new column names
-#             >>> reader = DictReader(f, fieldnames=['f1', 'f2', 'f3'], skip_lines=1)
-#             >>> print(reader.next())
-#             {'f1': 'l1f1', 'f2': 'l1f2', 'f3': 'l1f3'}
-#             >>>
-#             >>> # Lists without header
-#             >>> f = StringIO('["l1f1","l1f2","l1f3"]' + \
-#                              '["l2f1","l2f2","l3f3"]' + \
-#                              '["l3f1","l3f2","l3f3"]')
-#             >>> reader = DictReader(f, fieldnames=["field1", "field2", "field3"])
-#             >>> print(reader.next())
-#             {'field1': 'l1f1', 'field2': 'l1f2', 'field3': 'l1f3'}
-#             >>>
-#             >>> # Dictionaries
-#             >>> f = StringIO('{"field2": "l1f2", "field3": "l1f3", "field1": "l1f1"}' + \
-#                              '{"field2": "l2f2", "field3": "l3f3", "field1": "l2f1"}' + \
-#                              '{"field2": "l3f2", "field3": "l3f3", "field1": "l3f1"}')
-#             >>> reader = DictReader(f)
-#             >>> print(reader.next())
-#             {"field2": "l1f2", "field3": "l1f3", "field1": "l1f1"}
-#
-#         Parameters
-#         ----------
-#         f : file
-#             Handle to a file object that is open for reading
-#         fieldnames : list or None, optional
-#             Fieldnames to read - if `None` then the fieldnames are pulled
-#             from the first line
-#         args : *args
-#             Positional arguments for `Reader()`
-#         kwargs : **kwargs
-#             Keyword arguments for `Reader()`
-#         """
-#
-#         self.reader = Reader(f, *args, **kwargs)
-#         self._fieldnames = list(fieldnames)
-#
-#         self.restkey = restkey
-#         self.restval = restval
-#
-#     def __iter__(self):
-#         return self
-#
-#     @property
-#     def fieldnames(self):
-#
-#         """
-#         Return the fieldnames being read
-#
-#         Returns
-#         -------
-#         list
-#         """
-#
-#         return self._fieldnames
-#
-#     def next(self):
-#
-#         """
-#         Read and decode the next non-blank line.  See `Reader.next()` for more
-#         information.
-#
-#         Returns
-#         -------
-#         dict
-#         """
-#
-#         try:
-#
-#             # Get the next non-empty row
-#             row = self.reader.next()
-#             while not row:
-#                 row = self.reader.next()
-#
-#             if isinstance(row, list):
-#                 output = dict(zip(self.fieldnames, row))
-#             else:
-#                 output = row
-#
-#             # From csv.DictReader.next()
-#             num_fieldnames = len(self.fieldnames)
-#             num_row_keys = len(row)
-#             if num_fieldnames < num_row_keys:
-#                 output[self.restkey] = row[num_fieldnames:]
-#             elif num_fieldnames > num_row_keys:
-#                 for key in self.fieldnames[num_row_keys]:
-#                     output[key] = self.restval
-#
-#             return output
-#
-#         except Exception as e:
-#             if not self.reader.skip_failures:
-#                 raise e
-#
-#
-# class DictWriter(object):
-#
-#     """
-#     Write newline delimited JSON like `csv.DictWriter()`
-#     """
-#
-#     def __init__(self, f, fieldnames=None, restval=None, *args, **kwargs):
-#
-#         """
-#         Encode and write dictionaries to an output file.
-#
-#         Each dictionary is written one line at a time and a delimiter
-#         is added at the end of the line.
-#
-#         Output file example:
-#
-#             '{"field2": "l1f2", "field3": "l1f3", "field1": "l1f1"}'
-#             '{"field2": "l2f2", "field3": "l3f3", "field1": "l2f1"}'
-#             '{"field2": "l3f2", "field3": "l3f3", "field1": "l3f1"}'
-#
-#         Parameters
-#         ----------
-#         f : file
-#             Handle to an open file object that is open for writing
-#         skip_failures : bool, optional
-#             If True, exceptions thrown by `json.dumps()` will be suppressed
-#             and the offending line will be ignored
-#         fieldnames : list, optional
-#             Fieldnames to write
-#         args : *args
-#             Positional arguments for `Writer()`
-#         kwargs : **kwargs
-#             Keyword arguments for `Writer()`
-#         """
-#
-#         self._fieldnames = list(fieldnames)
-#         self.writer = Writer(f, *args, **kwargs)
-#
-#     @property
-#     def fieldnames(self):
-#
-#         """
-#         Return the fieldnames being written
-#
-#         Returns
-#         -------
-#         list
-#         """
-#
-#         return self._fieldnames
-#
-#     def writeheader(self):
-#
-#         """
-#         Since each line is a dictionary this method does nothing but it is
-#         included to allow for the writer to be transparently swapped with
-#         `csv.DictWriter()`
-#         """
-#
-#         pass
-#
-#     def writerow(self, row):
-#
-#         """
-#         Write a dictionary to the output file.
-#
-#         Parameters
-#         ----------
-#         row : dict
-#         """
-#
-#
-#
-#
-#
-#
-# class ListWriter(object):
-#
-#     """
-#     Write newline delimited JSON like `csv.DictWriter()`
-#     """
-#
-#     def __init__(self, f, fieldnames, restval=None, *args, **kwargs):
-#
-#         """
-#         Encode and write a list's values to an output file.
-#
-#         Each dictionary is written one line at a time and a delimiter
-#         is added at the end of the line.  A header can be written if
-#         the `writeheader()` method is called first.
-#
-#         Parameters
-#         ----------
-#         f : file
-#             Handle to an open file object that is open for writing
-#         skip_failures : bool, optional
-#             If True, exceptions thrown by `json.dumps()` will be suppressed
-#             and the offending line will be ignored
-#         fieldnames : list, optional
-#             Fieldnames to write
-#         args : *args
-#             Positional arguments for `Writer()`
-#         kwargs : **kwargs
-#             Keyword arguments for `Writer()`
-#         """
-#
-#         self.writer = Writer(f, *args, **kwargs)
-#
-#         self._fieldnames = list(fieldnames)
-#         self.restval = restval
-#
-#     @property
-#     def fieldnames(self):
-#
-#         """
-#         Return the fieldnames being written
-#
-#         Returns
-#         -------
-#         list
-#         """
-#
-#         return self._fieldnames
-#
-#     def writeheader(self):
-#
-#         """
-#         Write the fieldnames to the output file
-#         """
-#
-#         return self.writer.writerow(self.fieldnames)
-#
-#     def writerow(self, row):
-#
-#         """
-#         Write a list to the output file.  Only the fields specified by
-#         `fieldnames` will be written.
-#
-#         Parameters
-#         ----------
-#         row : dict
-#
-#         """
-#
-#         return self.writer.writerow([val for val in row if val in self.])
+
+class DictReader(object):
+
+    """
+    Read newline JSON as a dictionary.
+    """
+
+    def __init__(self, f, fieldnames=None, skip_lines=0, skip_failures=False, restkey=None, restval=None, reader=Reader,
+                 *args, **kwargs):
+
+        """
+        Read newline JSON like `csv.DictReader()`.
+
+        If the input file contains both lists/tuples and dictionaries then the
+        `fieldnames` option must specify the fields in the order they appear in
+        the list/tuple rows.  The dictionaries are automatically taken care of.
+
+        The `reader` option allows the user to specify the reader best suited
+        to the input file object, has only a few requirements, and allows the
+        user to develop their own reader for specific use-cases while still
+        taking advantage of the parsing and validation offered by this class.
+
+        Parameters
+        ----------
+        f : file
+            Input file object open for reading
+        fieldnames : list or tuple, optional
+            Fieldnames to read.  If `None` and the first row is a list, it is
+            used.  If the first row is a dictionary, its keys are used.
+        restkey : str, optional
+            If an input row contains more fields than `fieldnames` the extras
+            will be moved to `restkey's` value
+        restval : str, optional
+            If an input row contains fewer fields than `fieldnames` the
+            additional `fieldnames` are added with their val set to `restval`
+        reader : object, optional
+            Class to use for reading `f`.  This can be anything as long as the
+            first positional argument is a file-like object, it accepts
+            `*args/**kwargs`, and `reader.next()` returns a valid JSON object.
+        args : *args
+            Additional positional arguments for `reader`
+        kwargs : **kwargs
+            Additional keyword arguments for `reader`
+        """
+
+        self.reader = reader(f, *args, **kwargs)
+        self.restkey = restkey
+        self.restval = restval
+        self._first_row = None
+        self.skip_failures = skip_failures
+        if self.fieldnames is not None:
+            self.fieldnames = list(fieldnames)
+        if self.fieldnames is None:
+            self._first_row = self.reader.next()
+            self.fieldnames = self._first_row.keys()
+        for _i in range(skip_lines):
+            self.next()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.next()
+
+    @property
+    def line_num(self):
+
+        """
+        Get the current line number.
+
+        Returns
+        -------
+        int
+        """
+
+        return self.reader.line_num
+
+    def next(self):
+
+        """
+        Get the next JSON object from the reader and handle `restkey`, `restval`,
+        and differences in control flow for when rows are `list` or `dict`.
+
+        Returns
+        -------
+        dict, list, tuple
+            Whatever is returned by `newlinejson.JSON.dumps()`
+        """
+
+        # If the first row is cached then that means the first row of the input file is being used as the header
+        # (or if its a dict, its keys), which means this row is properly formatted and contains valid fields
+        if self._first_row is not None:
+            output = self._first_row
+            self._first_row = None
+            return output
+
+        # == Based on csv.DictReader.next() == #
+        row = self.reader.next()
+
+        # Convert list rows to dictionaries
+        if isinstance(row, (list, tuple)):
+            output = zip(self.fieldnames, row)
+        else:
+            output = row
+
+        len_fieldnames = len(self.fieldnames)
+        len_row = len(output)
+
+        # Handle restkey
+        if len_fieldnames < len_row:
+            output[self.restkey] = {k: v for k, v in row if k not in self.fieldnames}
+
+        # Handle restval
+        elif len_fieldnames > len_row:
+            for key in self.fieldnames[len_fieldnames:]:
+                output[key] = self.restval
+
+        return row
+
+
+class DictWriter(object):
+
+    """
+    Write dictionaries to newline JSON.
+    """
+
+    def __init__(self, f, fieldnames, restval=None, extrasaction='raise', writer=Writer,
+                 *args, **kwargs):
+
+        """
+        Write dictionaries to newline JSON like `csv.DictWriter()`.
+
+        Parameters
+        ----------
+        f : file
+            Input file object open for writing.
+        fieldnames : list or tuple
+            Fieldnames to be written.
+        restval : object, optional
+            If `extrasaction` is 'ignore' and some fields in `fieldnames` are not
+            present in a row being written, `restval` is assigned to the fields.
+            Can be anything serializable by `newlinejson.JSON.dumps()`.
+        extrasaction : str, optional
+            Describes what to do if a row being written has fields that are not
+            present in `fieldnames`.  If set to 'raise' a `ValueError` will be
+            raised.  If set to 'ignore' the additional content will be written.
+        writer : object, optional
+            Class to use for writing to `f`.  This can be anything as long as
+            the first positional argument is a file-like object, the second is
+            a list of fieldnames to write, it accepts `*args/**kwargs`, and has a
+            `write()` method that accepts a dictionary.
+        args : *args
+            Additional positional arguments for `writer`
+        kwargs : **kwargs
+            Additional keyword arguments for `writer`
+        """
+
+        self.writer = writer(f, *args, **kwargs)
+        self.restval = restval
+        self.fieldnames = list(fieldnames)
+        self.extrasaction = extrasaction.lower()
+        _extrasactions = ('raise', 'ignore')
+        if self.extrasaction is not None and self.extrasaction not in _extrasactions:
+            raise ValueError("Invalid extrasaction ({ea}) - must be: {eo}".format(
+                ea=self.extrasaction, eo=', '.join(_extrasactions)))
+
+    def writeheader(self):
+
+        """
+        Does nothing.  Included for transparency
+        """
+
+        pass
+
+    def writerow(self, row):
+
+        """
+        Encode a JSON object and write it via the `writer`.
+
+        Parameters
+        ----------
+        row : dict, list, tuple
+            An object serializable by `newlinejson.JSON.dumps()`
+        """
+
+        if self.extrasaction == "raise":
+            wrong_fields = [repr(k) for k in row if k not in self.fieldnames]
+            if wrong_fields:
+                raise ValueError("Row contains fields not in fieldnames: {fields}".format(', '.join(wrong_fields)))
+
+        return self.writer.write({k: row.get(k, self.restval) for k in self.fieldnames})
+
+    # Alias
+    write = writerow
+
+    def writerows(self, rows):
+
+        """
+        Write multiple rows to the output file.
+
+        Parameters
+        ----------
+        rows : list
+            List of JSON objects to write.
+
+        Returns
+        -------
+        True
+            On success.
+        """
+
+        for row in rows:
+            self.writerow(row)
+
+        return True
+
+
+class ListWriter(object):
+
+    """
+    Like `DictWriter()` but writes lists
+    """
+
+    def __init__(self, f, fieldnames, restval=None, extrasaction='raise', writer=Writer,
+                 *args, **kwargs):
+
+        """
+        Write dictionaries to newline JSON with a more CSV-like structure.
+
+        Input example:
+
+            {"field2": "l1f2", "field3": "l1f3", "field1": "l1f1"}
+            {"field2": "l2f2", "field3": "l3f3", "field1": "l2f1"}
+            {"field2": "l3f2", "field3": "l3f3", "field1": "l3f1"}
+            {"field2": "l4f2", "field3": "l4f3", "field1": "l4f1"}
+            {"field2": "l5f2", "field3": "l5f3", "field1": "l5f1"}
+
+        Output example:
+
+            ["field1", "field2", "field3"]
+            ["l1f1", "l1f2", "l1f3"]
+            ["l2f1", "l2f2", "l3f3"]
+            ["l3f1", "l3f2", "l3f3"]
+            ["l4f1", "l4f2", "l4f3"]
+            ["l5f1", "l5f2", "l5f3"]
+
+        Parameters
+        ----------
+        f : file
+            Input file object open for writing.
+        fieldnames : list or tuple
+            Fieldnames to be written.
+        restval : object, optional
+            If `extrasaction` is 'ignore' and some fields in `fieldnames` are not
+            present in a row being written, `restval` is assigned to the fields.
+            Can be anything serializable by `newlinejson.JSON.dumps()`.
+        extrasaction : str, optional
+            Describes what to do if a row being written has fields that are not
+            present in `fieldnames`.  If set to 'raise' a `ValueError` will be
+            raised.  If set to 'ignore' the additional content will be written.
+        writer : object, optional
+            Class to use for writing to `f`.  This can be anything as long as
+            the first positional argument is a file-like object, the second is
+            a list of fieldnames to write, it accepts `*args/**kwargs`, and has a
+            `write()` method that accepts a dictionary.
+        args : *args
+            Additional positional arguments for `writer`
+        kwargs : **kwargs
+            Additional keyword arguments for `writer`
+        """
+
+        self.writer = writer(f, *args, **kwargs)
+        self.restval = restval
+        self.fieldnames = list(fieldnames)
+        self.extrasaction = extrasaction.lower()
+        _extrasactions = ('raise', 'ignore')
+        if self.extrasaction is not None and self.extrasaction not in _extrasactions:
+            raise ValueError("Invalid extrasaction ({ea}) - must be: {eo}".format(
+                ea=self.extrasaction, eo=', '.join(_extrasactions)))
+
+    def writeheader(self):
+
+        """
+        Write a header row to the output file.
+
+        Returns
+        -------
+        object
+            Output from `writer.write()`
+        """
+
+        return self.writer.write(self.fieldnames)
+
+    def writerow(self, row):
+
+        """
+        Encode a JSON object and write it via the `writer`.
+
+        Parameters
+        ----------
+        row : dict, list, tuple
+            An object serializable by `newlinejson.JSON.dumps()`
+        """
+
+        if self.extrasaction == "raise":
+            wrong_fields = [repr(k) for k in row if k not in self.fieldnames]
+            if wrong_fields:
+                raise ValueError("Row contains fields not in fieldnames: {fields}".format(', '.join(wrong_fields)))
+
+        return self.writer.write([row.get(k, self.restval) for k in self.fieldnames])
+
+    # Alias
+    write = writerow
+
+    def writerows(self, rows):
+
+        """
+        Write multiple rows to the output file.
+
+        Parameters
+        ----------
+        rows : list
+            List of JSON objects to write.
+
+        Returns
+        -------
+        True
+            On success.
+        """
+
+        for row in rows:
+            self.writerow(row)
+
+        return True
