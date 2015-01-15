@@ -379,9 +379,9 @@ class Writer(object):
             # The built-in `json.dumps()` decodes to `str` so if it fails, try calling the `decode()`
             # method to force unicode.  Other readers could exhibit similar problems.
             try:
-                self._f.write(JSON.dumps(line, **self.kwargs) + self.delimiter)
+                self._f.write(self.jsonlib.dumps(line, **self.kwargs) + self.delimiter)
             except Exception:
-                self._f.write(JSON.dumps(line, **self.kwargs).decode() + self.delimiter)
+                self._f.write(self.jsonlib.dumps(line, **self.kwargs).decode() + self.delimiter)
 
             return True
 
