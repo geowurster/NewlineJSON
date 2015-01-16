@@ -15,9 +15,6 @@ except ImportError:
         from StringIO import StringIO
 import sys
 
-
-# Specify which JSON library to use.  Used everywhere JSON encoding/decoding happens.as
-# Allows the user to use ujson, simplejson, yajl, etc. instead of the built in library.
 JSON = json
 
 
@@ -224,7 +221,7 @@ class Reader(object):
     """
 
     def __init__(self, f, skip_lines=0, skip_failures=False, skip_empty=True, empty_val=None, fail_val=None,
-                 jsonlib=JSON, *args, **kwargs):
+                 json_lib=None, *args, **kwargs):
 
         """
         Read a file containing newline delimited JSON.
@@ -245,7 +242,7 @@ class Reader(object):
         empty_val : anything, optional
             Value to return if `skip_empty=False` - since an empty line has no
             corresponding JSON object, something must be returned.
-        jsonlib : object, optional
+        json_lib : object, optional
             Specify which JSON library to use for this instance
         args : *args, optional
             Eats additional positional arguments so this class can be
@@ -253,6 +250,8 @@ class Reader(object):
         kwargs : **kwargs, optional
             Additional keyword arguments for `newlinejson.JSON.loads()`.
         """
+
+        global JSON
 
         self._f = f
         self.skip_lines = skip_lines
@@ -262,7 +261,10 @@ class Reader(object):
         self.fail_val = fail_val
         self.empty_val = empty_val
         self.kwargs = kwargs
-        self.jsonlib = jsonlib
+        if json_lib is None:
+            self.json_lib = JSON
+        else:
+            self.json_lib = json_lib
 
         for i in range(skip_lines):
             self.next()
@@ -313,7 +315,7 @@ class Reader(object):
             elif row == '':
                 return self.empty_val
 
-            return self.jsonlib.loads(row, **self.kwargs)
+            return self.json_lib.loads(row, **self.kwargs)
 
         except ValueError as e:
 
@@ -329,7 +331,7 @@ class Writer(object):
     Write newline delimited JSON.
     """
 
-    def __init__(self, f, skip_failures=False, delimiter=os.linesep, jsonlib=JSON, *args, **kwargs):
+    def __init__(self, f, skip_failures=False, delimiter=os.linesep, json_lib=None, *args, **kwargs):
 
         """
         Read a file containing newline delimited JSON.
@@ -350,11 +352,16 @@ class Writer(object):
             Additional keyword arguments for `newlinejson.JSON.dumps()`.
         """
 
+        global JSON
+
         self._f = f
         self.skip_failures = skip_failures
         self.delimiter = delimiter
-        self.jsonlib = jsonlib
         self.kwargs = kwargs
+        if json_lib is None:
+            self.json_lib = JSON
+        else:
+            self.json_lib = json_lib
 
     def write(self, line):
 
@@ -379,9 +386,9 @@ class Writer(object):
             # The built-in `json.dumps()` decodes to `str` so if it fails, try calling the `decode()`
             # method to force unicode.  Other readers could exhibit similar problems.
             try:
-                self._f.write(self.jsonlib.dumps(line, **self.kwargs) + self.delimiter)
+                self._f.write(self.json_lib.dumps(line, **self.kwargs) + self.delimiter)
             except Exception:
-                self._f.write(self.jsonlib.dumps(line, **self.kwargs).decode() + self.delimiter)
+                self._f.write(self.json_lib.dumps(line, **self.kwargs).decode() + self.delimiter)
 
             return True
 
@@ -390,6 +397,9 @@ class Writer(object):
                 raise e
             else:
                 return False
+
+    # Alias for writer compatibility
+    writerow = write
 
 
 class DictReader(object):
