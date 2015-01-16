@@ -37,16 +37,10 @@ with open(os.path.join('newlinejson', '__init__.py')) as f:
         elif line.strip().startswith('__source__'):
             source = line.split('=')[1].strip().replace('"', '').replace("'", '')
 
+
 setuptools.setup(
-    name='NewlineJSON',
-    version=version,
     author=author,
     author_email=email,
-    description="Streaming newline delimited JSON I/O",
-    long_description=readme,
-    url=source,
-    license=license,
-    packages=setuptools.find_packages(),
     classifiers=[
         'Topic :: Utilities',
         'Intended Audience :: Developers',
@@ -56,12 +50,19 @@ setuptools.setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
     ],
-    include_package_data=True,
-    zip_safe=True,
-    keywords='streaming newline json',
-    install_requires=install_requires,
+    description="Streaming newline delimited JSON I/O",
     entry_points="""
         [console_scripts]
         nlj=newlinejson.nlj:main
-    """
+    """,
+    include_package_data=True,
+    install_requires=install_requires,
+    keywords='streaming newline delimited json',
+    license=license,
+    long_description=readme,
+    name='NewlineJSON',
+    packages=setuptools.find_packages(),
+    url=source,
+    version=version,
+    zip_safe=True
 )
