@@ -26,12 +26,11 @@ PY3 = sys.version_info[0] == 3
 
 
 __all__ = [
-    'JSON',
     'get_reader', 'get_writer',
     'load', 'loads', 'dump', 'dumps',
     'Reader', 'Writer',
-    'DictReader',
-    'DictWriter',
+    'CsvDictReader',
+    'CsvDictWriter',
     'ListWriter'
 ]
 
@@ -64,10 +63,10 @@ def get_reader(name):
     """
 
     name = name.lower()
-    if name == 'reader':
+    if name == 'newlinejson':
         return Reader
-    elif name == 'dictreader':
-        return DictReader
+    elif name == 'csvdictreader':
+        return CsvDictReader
     elif name == 'csv':
         return csv.DictReader
     else:
@@ -102,7 +101,7 @@ def get_writer(name):
     """
 
     name = name.lower()
-    if name in ('newlinejson', 'json'):
+    if name in 'newlinejson':
         return Writer
     elif name == 'csv':
         return csv.DictWriter
@@ -307,7 +306,7 @@ class Reader(object):
             if self.skip_empty:
                 while not row:
                     row = self._readline()
-            elif row == '':
+            elif not row:
                 return self.empty_val
 
             return JSON.loads(row, **self.kwargs)
@@ -388,7 +387,7 @@ class Writer(object):
                 return False
 
 
-class DictReader(object):
+class CsvDictReader(object):
 
     """
     Read newline JSON as a dictionary.
@@ -507,7 +506,7 @@ class DictReader(object):
         return row
 
 
-class DictWriter(object):
+class CsvDictWriter(object):
 
     """
     Write dictionaries to newline JSON.
