@@ -81,7 +81,7 @@ class TestGeneralOptions(unittest.TestCase):
         for json_lib in [json, ujson, simplejson, yajl]:
             result = self.runner.invoke(nlj.main, ['--json', json_lib.__name__, 'cat', self.tempfile.name])
             self.assertEqual(0, result.exit_code)
-            self.assertEqual(json_lib, nlj.newlinejson.JSON)
+            self.assertEqual(json_lib, nlj.newlinejson.core.JSON)
 
     def test_assign_bad_json_library(self):
 
