@@ -133,3 +133,43 @@ PEP8 report - the default style guide is used except a max line length of 120
 is preferred.
 
     $ pep8 --max-line-length=120 newlinejson
+
+
+Profiling
+---------
+
+Attempts to profile against: `json`, `jsonlib2`, `simplejson`, `ujson`, and
+`yajl`.  A small-ish file is used by default from `sample-data` but the user
+can specify any newline delimited JSON file input file as the first argument.
+
+    $ ./utils/profile.py 
+
+    Profiling json ...
+      Start time: 23:25:47
+      End time: 23:25:49
+      Elapsed secs: 1.654891
+      Num rows: 10000
+    
+    Profiling jsonlib2 ...
+      Start time: 23:25:49
+      End time: 23:25:52
+      Elapsed secs: 2.780862
+      Num rows: 10000
+    
+    Profiling simplejson ...
+      Start time: 23:25:52
+      End time: 23:25:55
+      Elapsed secs: 2.905002
+      Num rows: 10000
+    
+    Profiling ujson ...
+      Start time: 23:25:55
+      End time: 23:25:56
+      Elapsed secs: 0.927346
+      Num rows: 10000
+    
+    Profiling yajl ...
+      Start time: 23:25:56
+      End time: 23:25:58
+      Elapsed secs: 2.620200
+      Num rows: 10000
