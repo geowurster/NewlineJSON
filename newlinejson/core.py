@@ -129,7 +129,7 @@ def load(f, **kwargs):
     return [i for i in Reader(f, **kwargs)]
 
 
-def loads(string, **kwargs):
+def loads(string, json_lib=JSON, delimiter=os.linesep, **kwargs):
 
     """
     Same as `load()` but the input is a string instead of a file object.
@@ -138,8 +138,13 @@ def loads(string, **kwargs):
     ----------
     string : str
         Formatted string to be parsed
+    json_lib : module, optional
+        Specify which JSON library to use
+    delimiter : str, optional
+        Newline character
     kwargs : **kwargs, optional
-        Additional keyword arguments for the `Reader()` class.
+        Additional keyword arguments for `json.load()` or the equivalent if using
+        a different library.
 
     Returns
     -------
@@ -150,8 +155,7 @@ def loads(string, **kwargs):
     if not PY3:
         string = string.decode()
 
-    with StringIO(string) as f:
-        return load(f, **kwargs)
+    return [json_lib.loads(line, **kwargs) for line in string.split(delimiter)]
 
 
 def dump(line_list, f, **kwargs):
@@ -221,7 +225,7 @@ class Reader(object):
     """
 
     def __init__(self, f, skip_lines=0, skip_failures=False, skip_empty=True, empty_val=None, fail_val=None,
-                 json_lib=None, *args, **kwargs):
+                 json_lib=None, **kwargs):
 
         """
         Read a file containing newline delimited JSON.
@@ -231,7 +235,7 @@ class Reader(object):
         f : file
             Handle to an open file object that is open for reading.
         skip_lines : int, optional
-            Number of lines to immediately skip.
+            Number of lines to immediately skip with `next(f)`
         skip_failures : bool, optional
             If True, exceptions thrown by `newlinejson.JSON.loads()` will be
             suppressed and the offending line will be ignored.
@@ -242,22 +246,36 @@ class Reader(object):
         empty_val : anything, optional
             Value to return if `skip_empty=False` - since an empty line has no
             corresponding JSON object, something must be returned.
-        json_lib : object, optional
+        json_lib : module, optional
             Specify which JSON library to use for this instance
-        args : *args, optional
-            Eats additional positional arguments so this class can be
-            transparently swapped with other readers.
         kwargs : **kwargs, optional
             Additional keyword arguments for `newlinejson.JSON.loads()`.
-        """
 
-        global JSON
+        Attributes
+        ----------
+        f : file
+            Handle to the input file.
+        skip_lines : int
+            Number of lines that were skipped on instantiation.
+        skip_failures : bool
+            Are failures being skipped?
+        skip_empty : bool
+            Are empty lines being skipped?
+        line_num : int
+            Line number that was most recently read.
+        fail_val : anything
+            Value being returned from `next()` when a failure is encountered.
+        kwargs : dict
+            Keyword args being passed to `self.json_lib.loads()`
+        json_lib : module
+            JSON library currently being used for decoding
+        """
 
         self._f = f
         self.skip_lines = skip_lines
         self.skip_failures = skip_failures
         self.skip_empty = skip_empty
-        self.line_num = 0
+        self._line_num = 0
         self.fail_val = fail_val
         self.empty_val = empty_val
         self.kwargs = kwargs
@@ -267,7 +285,8 @@ class Reader(object):
             self.json_lib = json_lib
 
         for i in range(skip_lines):
-            self.next()
+            self._line_num += 1
+            next(self._f)
 
     def __iter__(self):
         return self
@@ -286,12 +305,38 @@ class Reader(object):
             The next stripped line from the file.
         """
 
-        self.line_num += 1
+        self._line_num += 1
 
         try:
             return self._f.__next__().strip()
         except AttributeError:
             return self._f.next().strip()
+
+    @property
+    def f(self):
+
+        """
+        Handle to the file-like object from which lines are being read.
+
+        Returns
+        -------
+        file
+        """
+
+        return self._f
+
+    @property
+    def line_num(self):
+
+        """
+        Line number of the previous line that was read.
+
+        Returns
+        -------
+        int
+        """
+
+        return self._line_num
 
     def next(self):
 
@@ -331,7 +376,7 @@ class Writer(object):
     Write newline delimited JSON.
     """
 
-    def __init__(self, f, skip_failures=False, delimiter=os.linesep, json_lib=None, *args, **kwargs):
+    def __init__(self, f, skip_failures=False, delimiter=os.linesep, json_lib=JSON, **kwargs):
 
         """
         Read a file containing newline delimited JSON.
@@ -345,23 +390,58 @@ class Writer(object):
             suppressed and the offending line will be ignored.
         delimiter : str, optional
             Newline character to be written after every row.
-        args : *args, optional
-            Eats additional positional arguments so this class can be
-            transparently swapped with other writers.
         kwargs : **kwargs, optional
             Additional keyword arguments for `newlinejson.JSON.dumps()`.
-        """
 
-        global JSON
+        Attributes
+        ----------
+        f : file
+            Handle to the input file.
+        skip_failures : bool
+            Are failures being skipped?
+        delimiter : str
+            Newline character
+        kwargs : dict
+            Keyword args being passed to `self.json_lib.dumps()`
+        line_num : int
+            Line number that was most recently written.
+        json_lib : module
+            JSON library currently being used for decoding
+        """
 
         self._f = f
         self.skip_failures = skip_failures
         self.delimiter = delimiter
         self.kwargs = kwargs
-        if json_lib is None:
-            self.json_lib = JSON
-        else:
-            self.json_lib = json_lib
+        self._line_num = 0
+        self.json_lib = json_lib
+
+    @property
+    def line_num(self):
+
+        """
+        Index to the line that was just written.  Index 0 is line 1, just like
+        a list.  Only successfully written lines are recorded.
+
+        Returns
+        -------
+        int
+        """
+
+        return self._line_num
+
+    @property
+    def f(self):
+
+        """
+        Handle to the file-like object from which lines are being read.
+
+        Returns
+        -------
+        file
+        """
+
+        return self._f
 
     def write(self, line):
 
@@ -390,6 +470,7 @@ class Writer(object):
             except Exception:
                 self._f.write(self.json_lib.dumps(line, **self.kwargs).decode() + self.delimiter)
 
+            self._line_num += 1
             return True
 
         except Exception as e:
