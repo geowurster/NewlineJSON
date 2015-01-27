@@ -28,6 +28,7 @@ __all__ = [
     'Reader', 'Writer',
     'CsvDictReader',
     'CsvDictWriter',
+    'DictWriter',
     'ListWriter'
 ]
 
@@ -399,6 +400,72 @@ class Writer(object):
 
     # Alias for writer compatibility
     writerow = write
+
+
+class DictWriter(Writer):
+
+    def __init__(self, f, fieldnames, allow_extra=False, extra_val=None, *args, **kwargs):
+
+        Writer.__init__(self, f, *args, **kwargs)
+
+        self.fieldnames = fieldnames
+        self.skip_failures = kwargs.get('skip_failures', False)
+        self.allow_extra = allow_extra
+        self.extra_val = extra_val
+
+        self._sorted_fieldnames = sorted(fieldnames)
+
+    def writeheader(self):
+
+        pass
+
+    def _format_output(self, line):
+
+        if isinstance(line, dict):
+            if not self.allow_extra and sorted(line.keys()) != self._sorted_fieldnames:
+                raise ValueError("Dict line has undeclared fields: fieldnames='{fieldnames}' line='{line}'".format(
+                    fieldnames=self.fieldnames, line=line))
+            else:
+                return {field: line.get(field, self.extra_val) for field in self.fieldnames}
+        else:
+            if not self.allow_extra and len(line) is not len(self.fieldnames):
+                raise ValueError("List line has too many or too few values: fieldnames='{fieldnames}' line='{line}'"
+                                 .format(fieldnames=self.fieldnames, line=line))
+            else:
+                _line_filler = [self.extra_val] * len(self.fieldnames) - len(line)
+                return {field: value for field, value in zip(self.fieldnames, line + _line_filler)}
+
+    def write(self, line):
+
+        try:
+            return Writer.write(self, self._format_output(line))
+        except Exception as e:
+            if not self.skip_failures:
+                raise e
+
+    writerow = write
+
+
+# class ListWriter(Writer, DictWriter):
+#
+#     def __init__(self, f, fieldnames, *args, **kwargs):
+#
+#         Writer.__init__(f, *args, **kwargs)
+#         DictWriter.__init__(f, fieldnames, *args, **kwargs)
+#
+#         self.skip_failures = kwargs.get('skip_failures', False)
+#
+#     def writeheader(self):
+#         pass
+#
+#     def write(self, line):
+#         try:
+#             pass
+#         except Exception as e:
+#             if not self.skip_failures:
+#                 raise e
+#
+#     writerow = write
 
 
 class CsvDictReader(object):
