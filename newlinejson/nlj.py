@@ -271,32 +271,32 @@ def load(ctx, output_json_file, reader_option, writer_option):
         sys.exit(1)
 
 
-# --------------------------------------------------------------------------- #
-#   Subcommand: csv2newline
-# --------------------------------------------------------------------------- #
-
-@main.command()
-@option_input_csv_file
-@option_output_json_file
-@option_reader_options
-@option_writer_options
-@click.pass_context
-def csv2newline(ctx, input_csv_file, output_json_file, reader_option, writer_option):
-
-    """
-    Convert a CSV to newline JSON dictionaries.
-    """
-
-    try:
-
-        reader_option = parse_key_vals(reader_option)
-        writer_option = parse_key_vals(writer_option)
-
-        writer = newlinejson.Writer(output_json_file, **writer_option)
-        for line in csv.DictReader(input_csv_file, **reader_option):
-            writer.write(line)
-
-    except Exception as e:
-
-        click.echo(e.message, err=True)
-        sys.exit(1)
+# # --------------------------------------------------------------------------- #
+# #   Subcommand: csv2newline
+# # --------------------------------------------------------------------------- #
+#
+# @main.command()
+# @option_input_csv_file
+# @option_output_json_file
+# @option_reader_options
+# @option_writer_options
+# @click.pass_context
+# def csv2newline(ctx, input_csv_file, output_json_file, reader_option, writer_option):
+#
+#     """
+#     Convert a CSV to newline JSON dictionaries.
+#     """
+#
+#     try:
+#
+#         reader_option = parse_key_vals(reader_option)
+#         writer_option = parse_key_vals(writer_option)
+#
+#         writer = newlinejson.Writer(output_json_file, **writer_option)
+#         for line in csv.DictReader(input_csv_file, **reader_option):
+#             writer.write(line)
+#
+#     except Exception as e:
+#
+#         click.echo(e.message, err=True)
+#         sys.exit(1)
