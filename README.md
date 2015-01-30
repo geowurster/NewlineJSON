@@ -5,7 +5,7 @@ Currently under development.
 
 Streaming newline delimited JSON I/O
 
-[![Build Status](https://travis-ci.org/geowurster/NewlineJSON.svg)](https://travis-ci.org/geowurster/NewlineJSON) [![Coverage Status](https://coveralls.io/repos/geowurster/NewlineJSON/badge.svg?branch=master)](https://coveralls.io/r/geowurster/NewlineJSON)
+[![Build Status](https://travis-ci.org/geowurster/NewlineJSON.svg?branch=master)](https://travis-ci.org/geowurster/NewlineJSON) [![Coverage Status](https://coveralls.io/repos/geowurster/NewlineJSON/badge.svg)](https://coveralls.io/r/geowurster/NewlineJSON?branch=master)
 
 
 Overview
