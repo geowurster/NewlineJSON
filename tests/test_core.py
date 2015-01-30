@@ -8,48 +8,63 @@ Unittests for newlinejson.core
 
 from __future__ import unicode_literals
 
+import csv
 import json
 import os
-try:
-    from io import StringIO
-except ImportError:
-    try:
-        from cStringIO import StringIO
-    except ImportError:
-        from StringIO import StringIO
+
 import sys
 import unittest
 
-import simplejson
-import ujson
-import yajl
+from . import JSON_LIBRARIES
+from . import StringIO
 
 import newlinejson
-
-
-JSON_LIBRARIES = [json, simplejson, ujson, yajl]
 
 
 SAMPLE_FILE_CONTENTS = {
     'list_with_header': os.linesep.join(
         [json.dumps(i) for i in (["field1", "field2", "field3"],
                                  ["l1f1", "l1f2", "l1f3"],
-                                 ["l2f1", "l2f2", "l3f3"],
+                                 ["l2f1", "l2f2", "l2f3"],
                                  ["l3f1", "l3f2", "l3f3"])]),
     'list_no_header': os.linesep.join(
         [json.dumps(i) for i in (["l1f1", "l1f2", "l1f3"],
-                                 ["l2f1", "l2f2", "l3f3"],
+                                 ["l2f1", "l2f2", "l2f3"],
                                  ["l3f1", "l3f2", "l3f3"])]),
     'dict_lines': os.linesep.join(
         [json.dumps(i) for i in ({"field2": "l1f2", "field3": "l1f3", "field1": "l1f1"},
-                                 {"field2": "l2f2", "field3": "l3f3", "field1": "l2f1"},
+                                 {"field2": "l2f2", "field3": "l2f3", "field1": "l2f1"},
                                  {"field2": "l3f2", "field3": "l3f3", "field1": "l3f1"})])
 }
 
 
 # StringIO in Python 2 requires unicode
-if sys.version_info[0] is 2:
+if not newlinejson.PY3:
     SAMPLE_FILE_CONTENTS = {unicode(k): unicode(v) for k, v in SAMPLE_FILE_CONTENTS.items()}
+
+
+class TestGetReader(unittest.TestCase):
+
+    def test_json(self):
+        self.assertEqual(newlinejson.Reader, newlinejson.get_reader('JsoN'))
+
+    def test_newlinejson(self):
+        self.assertEqual(newlinejson.Reader, newlinejson.get_reader('NeWlInEJsOn'))
+
+    def test_csv(self):
+        self.assertEqual(csv.DictReader, newlinejson.get_reader('CsV'))
+
+
+class TestGetWriter(unittest.TestCase):
+
+    def test_json(self):
+        self.assertEqual(newlinejson.Writer, newlinejson.get_writer('JsoN'))
+
+    def test_newlinejson(self):
+        self.assertEqual(newlinejson.Writer, newlinejson.get_writer('NeWlInEJsOn'))
+
+    def test_csv(self):
+        self.assertEqual(csv.DictWriter, newlinejson.get_writer('CsV'))
 
 
 class TestReader(unittest.TestCase):
@@ -74,7 +89,6 @@ class TestReader(unittest.TestCase):
                     for expected, actual in zip(e_f, newlinejson.Reader(a_f)):
                         self.assertEqual(json.loads(expected), actual)
                         test_executed = True
-
         self.assertTrue(test_executed)
 
     def test_readline(self):
@@ -109,7 +123,6 @@ class TestReader(unittest.TestCase):
                     actual_line = reader.next()
                     self.assertEqual(expected_line, actual_line)
                     test_executed = True
-
         self.assertTrue(test_executed)
 
     def test_bad_line_exception(self):
@@ -181,7 +194,6 @@ class TestReader(unittest.TestCase):
                     # Make sure no blank lines were read
                     # idx starts at 0 so add 1
                     self.assertEqual(idx + 1, len(content_lines_expected))
-
         self.assertTrue(test_executed)
 
     def test_read_mixed_types(self):
@@ -201,8 +213,15 @@ class TestReader(unittest.TestCase):
                     expected = json.loads(expected)
                     self.assertEqual(expected, actual)
                     test_executed = True
-
         self.assertTrue(test_executed)
+
+    def test_line_num(self):
+
+        # Prep test file objects and compare every line
+        with StringIO(SAMPLE_FILE_CONTENTS.values()[0]) as a_f:
+            reader = newlinejson.Reader(a_f)
+            for idx, line in enumerate(reader):
+                self.assertEqual(idx + 1, reader.line_num)
 
 
 class TestWriter(unittest.TestCase):
@@ -233,7 +252,6 @@ class TestWriter(unittest.TestCase):
                     for actual, expected in zip(f, content):
                         self.assertEqual(json.loads(actual), expected)
                         test_executed = True
-
         self.assertTrue(test_executed)
 
     def test_different_delimiter(self):
