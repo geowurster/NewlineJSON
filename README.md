@@ -20,7 +20,6 @@ One dictionary per line:
     >>> with open('sample-data/dictionaries.json') as f:
     >>>     for line in newlinejson.Reader(f):
     >>>         print(line)
-    >>>
     {'field2': 'l1f2', 'field3': 'l1f3', 'field1': 'l1f1'}
     {'field2': 'l2f2', 'field3': 'l3f3', 'field1': 'l2f1'}
     {'field2': 'l3f2', 'field3': 'l3f3', 'field1': 'l3f1'}
@@ -33,7 +32,6 @@ One list per line:
     >>> with open('sample-data/lists-no-header.json') as f:
     >>>     for line in newlinejson.Reader(f):
     >>>         print(line)
-    >>>
     ['l1f2', 'l1f3', 'l1f1']
     ['l2f2', 'l3f3', 'l2f1']
     ['l3f2', 'l3f3', 'l3f1']
@@ -46,7 +44,6 @@ Mixed content:
     >>> with open('sample-data/mixed-content.json') as f:
     >>>     for line in newlinejson.Reader(f):
     >>>         print(line)
-    >>> 
     {'field2': 'l1f2', 'field3': 'l1f3', 'field1': 'l1f1'}
     ['l1f2', 'l1f3', 'l1f1']
     {'field2': 'l2f2', 'field3': 'l3f3', 'field1': 'l2f1'}
@@ -68,7 +65,6 @@ Load from a file:
     >>> import newlinejson
     >>> with open('sample-data/dictionaries.json') as f:
     >>>     print(newlinejson.load(f))
-    >>> 
     [
         {'field2': 'l1f2', 'field3': 'l1f3', 'field1': 'l1f1'},
         {'field2': 'l2f2', 'field3': 'l3f3', 'field1': 'l2f1'},
@@ -81,8 +77,8 @@ Load from a string:
 
     >>> import newlinejson
     >>> with open('sample-data/dictionaries.json') as f:
-    >>>     print(newlinejson.loads(f.read()))
-    >>> 
+    >>>     content = f.read()
+    >>>     print(newlinejson.loads(content))
     [
         {'field2': 'l1f2', 'field3': 'l1f3', 'field1': 'l1f1'},
         {'field2': 'l2f2', 'field3': 'l3f3', 'field1': 'l2f1'},
@@ -91,14 +87,26 @@ Load from a string:
         {'field2': 'l5f2', 'field3': 'l5f3', 'field1': 'l5f1'}
     ]
 
-Dump to a file:
+Dump to a file or a string:
     
+    >>> import newlinejson
+    >>> json_lines = [
+        {'field2': 'l1f2', 'field3': 'l1f3', 'field1': 'l1f1'},
+        {'field2': 'l2f2', 'field3': 'l3f3', 'field1': 'l2f1'},
+        {'field2': 'l3f2', 'field3': 'l3f3', 'field1': 'l3f1'},
+        {'field2': 'l4f2', 'field3': 'l4f3', 'field1': 'l4f1'},
+        {'field2': 'l5f2', 'field3': 'l5f3', 'field1': 'l5f1'}
+    ]
     >>> with open('output.json', 'w') as f:
     >>>     newlinejson.dump(json_lines, f)
-
-Dump to a string:
-    
-    >>> string = newlinejson.dumps(json_lines)
+    >>> print(newlinejson.dumps(json_lines))
+    [
+        {'field2': 'l1f2', 'field3': 'l1f3', 'field1': 'l1f1'},
+        {'field2': 'l2f2', 'field3': 'l3f3', 'field1': 'l2f1'},
+        {'field2': 'l3f2', 'field3': 'l3f3', 'field1': 'l3f1'},
+        {'field2': 'l4f2', 'field3': 'l4f3', 'field1': 'l4f1'},
+        {'field2': 'l5f2', 'field3': 'l5f3', 'field1': 'l5f1'}
+    ]
 
 
 Installing
