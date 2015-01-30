@@ -218,7 +218,7 @@ class TestReader(unittest.TestCase):
     def test_line_num(self):
 
         # Prep test file objects and compare every line
-        with StringIO(SAMPLE_FILE_CONTENTS.values()[0]) as a_f:
+        with StringIO(SAMPLE_FILE_CONTENTS['dict_lines']) as a_f:
             reader = newlinejson.Reader(a_f)
             for idx, line in enumerate(reader):
                 self.assertEqual(idx + 1, reader.line_num)
