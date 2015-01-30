@@ -515,7 +515,7 @@ class Writer(object):
         try:
 
             linestring = self.json_lib.dumps(line, **self.kwargs) + self.delimiter
-            if not PY3:
+            if not PY3:  # pragma no cover
                 linestring = linestring.decode()
             self._f.write(linestring)
             self._line_num += 1

@@ -39,7 +39,7 @@ SAMPLE_FILE_CONTENTS = {
 
 
 # StringIO in Python 2 requires unicode
-if not newlinejson.PY3:
+if not newlinejson.PY3:  # pragma no cover
     SAMPLE_FILE_CONTENTS = {unicode(k): unicode(v) for k, v in SAMPLE_FILE_CONTENTS.items()}
 
 
