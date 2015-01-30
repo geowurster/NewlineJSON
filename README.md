@@ -119,20 +119,32 @@ Developing
     $ nosetests
 
 
-Testing
--------
+Developing
+----------
 
-Code coverage report
+Install:
 
-    $ nosetests \
-    $     --with-coverage \
-    $     --cover-package=newlinejson \
-    $     --cover-erase --cover-inclusive
+    $ pip install virtualenv
+    $ git clone https://github.com/geowurster/newlinejson
+    $ cd newlinejson
+    $ virtualenv venv
+    $ source venv/bin/activate
+    $ pip install -r requirements-dev.txt
+    $ pip install -e .
 
-PEP8 report - the default style guide is used except a max line length of 120
-is preferred.
+Test:
+    
+    $ nosetests
+
+
+Coverage:
+
+    $ nosetests --with-coverage
+
+Lint:
 
     $ pep8 --max-line-length=120 newlinejson
+
 
 
 Profiling
