@@ -280,9 +280,6 @@ class Reader(object):
     def __iter__(self):
         return self
 
-    def __next__(self):
-        return self.next()
-
     @property
     def f(self):
 
@@ -335,47 +332,6 @@ class Reader(object):
 
         return cls(container(string), **kwargs)
 
-    # def seek(self, target_line):
-    #
-    #     """
-    #     Move the cursor to the beginning of the specified line, which is zero
-    #     indexing.  `seek_line(1)` means the next line read will be the second
-    #     line in the file.
-    #
-    #     Parameters
-    #     ----------
-    #     target_line : int
-    #         Move the cursor to this index.
-    #
-    #     Returns
-    #     -------
-    #     True
-    #         On success
-    #
-    #     Notes
-    #     -----
-    #     - The input file-like object must support `seek(0)` in order to initially
-    #     move the cursor to the very beginning of the file.
-    #     - Each line in the input file is iterated over until the desired position
-    #     is found so this method will not work when streaming from `sys.stdin` and
-    #     will be inefficient when working with large files.
-    #     - Instead of decoding every line to JSON while seeking only the input
-    #     file-like object is iterated over.
-    #     """
-    #
-    #     # Must manually the line counter but ONLY if we successfully move the cursor to the beginning of the input
-    #     # file-like object, otherwise the line counter could be reset and not accurately reflect the current position.
-    #     self._f.seek(0)
-    #     self._line_num = 0
-    #     while target_line <= self._line_num:
-    #         try:
-    #             next(self._f)
-    #             self._line_num += 1
-    #         except StopIteration:
-    #             break
-    #
-    #     return True
-
     def _readline(self):
 
         """
@@ -421,6 +377,49 @@ class Reader(object):
             else:
                 return self.fail_val
 
+    __next__ = next
+
+    # def seek(self, target_line):
+    #
+    #     """
+    #     Move the cursor to the beginning of the specified line, which is zero
+    #     indexing.  `seek_line(1)` means the next line read will be the second
+    #     line in the file.
+    #
+    #     Parameters
+    #     ----------
+    #     target_line : int
+    #         Move the cursor to this index.
+    #
+    #     Returns
+    #     -------
+    #     True
+    #         On success
+    #
+    #     Notes
+    #     -----
+    #     - The input file-like object must support `seek(0)` in order to initially
+    #     move the cursor to the very beginning of the file.
+    #     - Each line in the input file is iterated over until the desired position
+    #     is found so this method will not work when streaming from `sys.stdin` and
+    #     will be inefficient when working with large files.
+    #     - Instead of decoding every line to JSON while seeking only the input
+    #     file-like object is iterated over.
+    #     """
+    #
+    #     # Must manually the line counter but ONLY if we successfully move the cursor to the beginning of the input
+    #     # file-like object, otherwise the line counter could be reset and not accurately reflect the current position.
+    #     self._f.seek(0)
+    #     self._line_num = 0
+    #     while target_line <= self._line_num:
+    #         try:
+    #             next(self._f)
+    #             self._line_num += 1
+    #         except StopIteration:
+    #             break
+    #
+    #     return True
+
 
 class Writer(object):
 
@@ -428,7 +427,7 @@ class Writer(object):
     Write newline delimited JSON.
     """
 
-    def __init__(self, f, skip_failures=False, delimiter=os.linesep, json_lib=JSON, **kwargs):
+    def __init__(self, f, skip_failures=False, delimiter=os.linesep, json_lib=None, **kwargs):
 
         """
         Read a file containing newline delimited JSON.
@@ -466,21 +465,24 @@ class Writer(object):
         self.delimiter = delimiter
         self.kwargs = kwargs
         self._line_num = 0
-        self.json_lib = json_lib
+        if json_lib is None:
+            self.json_lib = JSON
+        else:
+            self.json_lib = json_lib
 
-    @property
-    def line_num(self):
-
-        """
-        Index to the line that was just written.  Index 0 is line 1, just like
-        a list.  Only successfully written lines are recorded.
-
-        Returns
-        -------
-        int
-        """
-
-        return self._line_num
+    # @property
+    # def line_num(self):
+    #
+    #     """
+    #     Index to the line that was just written.  Index 0 is line 1, just like
+    #     a list.  Only successfully written lines are recorded.
+    #
+    #     Returns
+    #     -------
+    #     int
+    #     """
+    #
+    #     return self._line_num
 
     @property
     def f(self):

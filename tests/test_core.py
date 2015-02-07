@@ -54,6 +54,9 @@ class TestGetReader(unittest.TestCase):
     def test_csv(self):
         self.assertEqual(csv.DictReader, newlinejson.get_reader('CsV'))
 
+    def test_exception(self):
+        self.assertRaises(ValueError, newlinejson.get_reader, '--BAD-__Reader')
+
 
 class TestGetWriter(unittest.TestCase):
 
@@ -66,8 +69,22 @@ class TestGetWriter(unittest.TestCase):
     def test_csv(self):
         self.assertEqual(csv.DictWriter, newlinejson.get_writer('CsV'))
 
+    def test_exception(self):
+        self.assertRaises(ValueError, newlinejson.get_writer, '--BAD-__Reader')
+
 
 class TestReader(unittest.TestCase):
+
+    def setUp(self):
+        reload(newlinejson.core)  # Make sure JSON is set back to the default
+
+    def test_attributes(self):
+        with StringIO() as f:
+            reader = newlinejson.Reader(f)
+            self.assertTrue(hasattr(reader, '__next__'))
+            self.assertTrue(hasattr(reader, 'next'))
+            self.assertTrue(hasattr(reader, '__iter__'))
+            self.assertEqual(reader.f, f)
 
     def test_standard(self):
 
@@ -79,14 +96,16 @@ class TestReader(unittest.TestCase):
         for json_lib in JSON_LIBRARIES:
 
             # Test with all JSON libraries
-            newlinejson.JSON = json_lib
+            newlinejson.core.JSON = json_lib
 
             # Test with all kinds of content
             for content in SAMPLE_FILE_CONTENTS.values():
 
                 # Prep test file objects and compare every line
                 with StringIO(content) as e_f, StringIO(content) as a_f:
-                    for expected, actual in zip(e_f, newlinejson.Reader(a_f)):
+                    reader = newlinejson.Reader(a_f)
+                    self.assertEqual(reader.json_lib, json_lib)
+                    for expected, actual in zip(e_f, reader):
                         self.assertEqual(json.loads(expected), actual)
                         test_executed = True
         self.assertTrue(test_executed)
@@ -108,11 +127,13 @@ class TestReader(unittest.TestCase):
         test_executed = False
 
         for json_lib in JSON_LIBRARIES:
+            newlinejson.core.JSON = json_lib
             for content in SAMPLE_FILE_CONTENTS.values():
 
                 with StringIO(content) as e_f, StringIO(content) as a_f:
 
                     reader = newlinejson.Reader(a_f, skip_lines=1)
+                    self.assertEqual(reader.json_lib, json_lib)
 
                     # Skip the first line and grab the second line for testing
                     e_f.readline()
@@ -130,10 +151,11 @@ class TestReader(unittest.TestCase):
         # Lines that cannot be decoded by JSON should throw an exception by default
 
         for json_lib in JSON_LIBRARIES:
-            newlinejson.JSON = json_lib
+            newlinejson.core.JSON = json_lib
 
             with StringIO('[') as f:
                 reader = newlinejson.Reader(f)
+                self.assertEqual(reader.json_lib, json_lib)
                 self.assertRaises(ValueError, reader.next)
 
     def test_bad_line_no_exception(self):
@@ -142,11 +164,12 @@ class TestReader(unittest.TestCase):
 
         for json_lib in JSON_LIBRARIES:
 
-            newlinejson.JSON = json_lib
+            newlinejson.core.JSON = json_lib
 
             for fail_val in [None, 1, 1.23, float, int, object, '', str, {}, []]:
                 with StringIO('[') as f:
                     reader = newlinejson.Reader(f, skip_failures=True, fail_val=fail_val)
+                    self.assertEqual(reader.json_lib, json_lib)
                     self.assertEqual(reader.next(), fail_val)
 
     def test_empty_line(self):
@@ -154,11 +177,12 @@ class TestReader(unittest.TestCase):
         # If skip_empty=False then some user-defined value is returned instead of an empty line
         for json_lib in JSON_LIBRARIES:
 
-            newlinejson.JSON = json_lib
+            newlinejson.core.JSON = json_lib
 
             for empty_val in [None, 1, 1.23, float, int, object, '', str, {}, []]:
                 with StringIO(' ') as f:
                     reader = newlinejson.Reader(f, skip_empty=False, empty_val=empty_val)
+                    self.assertEqual(reader.json_lib, json_lib)
                     self.assertEqual(reader.next(), empty_val)
 
     def test_skip_empty(self):
@@ -169,7 +193,7 @@ class TestReader(unittest.TestCase):
         test_executed = False
 
         for json_lib in JSON_LIBRARIES:
-            newlinejson.JSON = json_lib
+            newlinejson.core.JSON = json_lib
             for content in SAMPLE_FILE_CONTENTS.values():
 
                 # Create some new content that has a bunch of empty lines
@@ -184,6 +208,7 @@ class TestReader(unittest.TestCase):
                 with StringIO(os.linesep.join(content_lines)) as a_f, \
                         StringIO(os.linesep.join(content_lines_expected)) as e_f:
                     reader = newlinejson.Reader(a_f, skip_empty=True)
+                    self.assertEqual(reader.json_lib, json_lib)
                     idx = None
                     for idx, z in enumerate(zip(reader, e_f)):
                         actual, expected = z
@@ -205,10 +230,11 @@ class TestReader(unittest.TestCase):
 
         content = os.linesep.join([l.strip() for l in SAMPLE_FILE_CONTENTS.values() if l.strip() != ''])
         for json_lib in JSON_LIBRARIES:
-            newlinejson.JSON = json_lib
+            newlinejson.core.JSON = json_lib
 
             with StringIO(content) as a_f, StringIO(content) as e_f:
                 reader = newlinejson.Reader(a_f)
+                self.assertEqual(reader.json_lib, json_lib)
                 for actual, expected in zip(reader, e_f):
                     expected = json.loads(expected)
                     self.assertEqual(expected, actual)
@@ -223,8 +249,26 @@ class TestReader(unittest.TestCase):
             for idx, line in enumerate(reader):
                 self.assertEqual(idx + 1, reader.line_num)
 
+    def test_default_json_lib(self):
+        with StringIO() as f:
+            reader = newlinejson.Reader(f)
+            self.assertEqual(reader.json_lib, json)
+
+    def test_explicitly_assign_json_lib(self):
+        with StringIO() as f:
+            reader = newlinejson.Reader(f, json_lib=json)
+            self.assertEqual(reader.json_lib, json)
+
 
 class TestWriter(unittest.TestCase):
+
+    def setUp(self):
+        reload(newlinejson.core)  # Make sure JSON is set back to the default
+
+    def test_attributes(self):
+        with StringIO() as f:
+            writer = newlinejson.Writer(f)
+            self.assertEqual(writer.f, f)
 
     def test_writerow(self):
 
@@ -234,11 +278,12 @@ class TestWriter(unittest.TestCase):
         test_executed = False
 
         for json_lib in JSON_LIBRARIES:
-            newlinejson.JSON = json_lib
+            newlinejson.core.JSON = json_lib
 
             for content in SAMPLE_FILE_CONTENTS.values():
                 with StringIO() as f:
                     writer = newlinejson.Writer(f)
+                    self.assertEqual(writer.json_lib, json_lib)
 
                     # Turn test content into a list of lines
                     content = [json.loads(l) for l in content.split(os.linesep)]
@@ -269,8 +314,8 @@ class TestWriter(unittest.TestCase):
                 # Test lines - the writer writes a delimiter to the very end of the file that must be removed in order
                 # to compare
                 f.seek(0)
-                actual = f.read()[:-len(new_delim)]
-                expected = new_delim.join([json.dumps(i) for i in expected_lines])
+                actual = f.read()
+                expected = new_delim.join([json.dumps(i) for i in expected_lines]) + new_delim
                 self.assertEqual(actual, expected)
 
     def test_bad_lines_throw_exception(self):
@@ -288,12 +333,22 @@ class TestWriter(unittest.TestCase):
             self.assertTrue(writer.write([1, 2, 3]))
             self.assertFalse(writer.write(newlinejson))
 
+    def test_default_json_lib(self):
+        with StringIO() as f:
+            writer = newlinejson.Writer(f, json_lib=None)
+            self.assertEqual(writer.json_lib, json)
+
+    def test_explicitly_assign_json_lib(self):
+        with StringIO() as f:
+            writer = newlinejson.Writer(f, json_lib=json)
+            self.assertEqual(writer.json_lib, json)
+
 
 def test_load():
 
     # Test for newlinejson.core.load()
     for json_lib in JSON_LIBRARIES:
-        newlinejson.JSON = json_lib
+        newlinejson.core.JSON = json_lib
         for content in SAMPLE_FILE_CONTENTS.values():
             with StringIO(content) as a_f, StringIO(content) as e_f:
                 actual = newlinejson.load(a_f)
@@ -305,7 +360,7 @@ def test_loads():
 
     # Test for newlinejson.core.loads()
     for json_lib in JSON_LIBRARIES:
-        newlinejson.JSON = json_lib
+        newlinejson.core.JSON = json_lib
         for content in SAMPLE_FILE_CONTENTS.values():
             with StringIO(content) as f:
                 actual = newlinejson.loads(content)
@@ -316,7 +371,6 @@ def test_loads():
 class TestDump(unittest.TestCase):
 
     def test_wrong_type(self):
-
         self.assertRaises(TypeError, newlinejson.dump, None, None)
 
     def test_dump(self):
@@ -326,7 +380,7 @@ class TestDump(unittest.TestCase):
         # Prep by setting the JSON library, loading the test content into a file object so it can be read and decoded
         # so that it can then be written again by the function being tested
         for json_lib in JSON_LIBRARIES:
-            newlinejson.JSON = json_lib
+            newlinejson.core.JSON = json_lib
             for content in SAMPLE_FILE_CONTENTS.values():
                 with StringIO(content) as decode_f, StringIO() as target_f:
 
@@ -359,7 +413,7 @@ class TestDumps(unittest.TestCase):
         test_executed = False
 
         for json_lib in JSON_LIBRARIES:
-            newlinejson.JSON = json_lib
+            newlinejson.core.JSON = json_lib
             for content in SAMPLE_FILE_CONTENTS.values():
                 with StringIO(content) as decode_f:
 
