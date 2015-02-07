@@ -269,6 +269,8 @@ class TestWriter(unittest.TestCase):
     def test_attributes(self):
         with StringIO() as f:
             writer = newlinejson.Writer(f)
+            self.assertTrue(hasattr(writer, 'writerow'))
+            self.assertTrue(hasattr(writer, 'write'))
             self.assertEqual(writer.f, f)
 
     def test_writerow(self):
