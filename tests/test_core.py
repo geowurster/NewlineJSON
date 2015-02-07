@@ -157,6 +157,7 @@ class TestReader(unittest.TestCase):
                 reader = newlinejson.Reader(f)
                 self.assertEqual(reader.json_lib, json_lib)
                 self.assertRaises(ValueError, reader.next)
+                self.assertEqual(1, reader.failures)
 
     def test_bad_line_no_exception(self):
 
@@ -324,6 +325,7 @@ class TestWriter(unittest.TestCase):
         with StringIO() as f:
             writer = newlinejson.Writer(f)
             self.assertRaises(TypeError, writer.write, newlinejson)
+            self.assertEqual(1, writer.failures)
 
     def test_skip_bad_lines(self):
 
