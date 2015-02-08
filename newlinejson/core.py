@@ -19,7 +19,7 @@ JSON = json
 
 
 # Python 2/3 compatibility
-PY3 = sys.version_info[0] == 3
+PY3 = sys.version_info[0] is 3
 if PY3:  # pragma no cover
     STR_TYPES = (str)
 else:  # pragma no cover

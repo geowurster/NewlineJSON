@@ -9,6 +9,7 @@ Unittests for newlinejson.core
 from __future__ import unicode_literals
 
 import csv
+from imp import reload
 import json
 import os
 
