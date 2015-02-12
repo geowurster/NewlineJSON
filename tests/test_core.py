@@ -8,7 +8,6 @@ Unittests for newlinejson.core
 
 from __future__ import unicode_literals
 
-import csv
 from imp import reload
 import json
 import os
@@ -42,36 +41,6 @@ SAMPLE_FILE_CONTENTS = {
 # StringIO in Python 2 requires unicode
 if not newlinejson.PY3:  # pragma no cover
     SAMPLE_FILE_CONTENTS = {unicode(k): unicode(v) for k, v in SAMPLE_FILE_CONTENTS.items()}
-
-
-class TestGetReader(unittest.TestCase):
-
-    def test_json(self):
-        self.assertEqual(newlinejson.Reader, newlinejson.get_reader('JsoN'))
-
-    def test_newlinejson(self):
-        self.assertEqual(newlinejson.Reader, newlinejson.get_reader('NeWlInEJsOn'))
-
-    def test_csv(self):
-        self.assertEqual(csv.DictReader, newlinejson.get_reader('CsV'))
-
-    def test_exception(self):
-        self.assertRaises(ValueError, newlinejson.get_reader, '--BAD-__Reader')
-
-
-class TestGetWriter(unittest.TestCase):
-
-    def test_json(self):
-        self.assertEqual(newlinejson.Writer, newlinejson.get_writer('JsoN'))
-
-    def test_newlinejson(self):
-        self.assertEqual(newlinejson.Writer, newlinejson.get_writer('NeWlInEJsOn'))
-
-    def test_csv(self):
-        self.assertEqual(csv.DictWriter, newlinejson.get_writer('CsV'))
-
-    def test_exception(self):
-        self.assertRaises(ValueError, newlinejson.get_writer, '--BAD-__Reader')
 
 
 class TestReader(unittest.TestCase):

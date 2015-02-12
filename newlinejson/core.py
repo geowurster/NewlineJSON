@@ -3,7 +3,6 @@ Core functions and classes
 """
 
 
-import csv
 import json
 import os
 try:
@@ -14,6 +13,9 @@ except ImportError:  # pragma no cover
     except ImportError:
         from StringIO import StringIO
 import sys
+
+import derive
+
 
 JSON = json
 
@@ -28,83 +30,9 @@ else:  # pragma no cover
 
 __all__ = [
     'PY3',
-    'get_reader', 'get_writer',
     'load', 'loads', 'dump', 'dumps',
     'Reader', 'Writer',
 ]
-
-
-def get_reader(name):
-
-    """
-    Get a reader class by name.  Primarily used by commandline utilities.
-
-    Supported Readers
-    -----------------
-    csv  --> csv.DictReader
-    json --> newlinejson.Reader
-    newlinejson --> newlinejson.Reader
-
-    Parameters
-    ----------
-    name : str
-        Name of reader as string.
-
-    Returns
-    -------
-    object
-
-    Raises
-    ------
-    ValueError
-        Unrecognized reader name.
-    """
-
-    name = name.lower()
-    if name == 'newlinejson':
-        return Reader
-    elif name == 'json':
-        return Reader
-    elif name == 'csv':
-        return csv.DictReader
-    else:
-        raise ValueError("Invalid reader: {name}".format(name=name))
-
-
-def get_writer(name):
-
-    """
-    Get a writer class by name.  Primarily used by commandline utilities.
-
-    Supported Writers
-    -----------------
-    csv  --> csv.DictWriter
-    json --> newlinejson.Writer
-    newlinejson --> newlinejson.Writer
-    dictwriter  --> newlinejson.DictWriter
-
-    Parameters
-    ----------
-    name : str
-        Name of writer as string.
-
-    Returns
-    -------
-    object
-
-    Raises
-    ------
-    ValueError
-        Unrecognized writer name.
-    """
-
-    name = name.lower()
-    if name in 'newlinejson':
-        return Writer
-    elif name == 'csv':
-        return csv.DictWriter
-    else:
-        raise ValueError()
 
 
 def load(f, **kwargs):

@@ -9,8 +9,8 @@ python:
 install:
   - pip install nose
   - pip install coverage
-  - pip install -r requirements.txt
   - pip install coveralls
+  - pip install -r requirements.txt
   - pip install .
 
 script:

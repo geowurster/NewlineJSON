@@ -5,7 +5,6 @@ Unittests for newlinejson.nlj
 
 import json
 import os
-import sys
 import tempfile
 import unittest
 
@@ -16,58 +15,6 @@ import click.testing
 
 import newlinejson
 from newlinejson import nlj
-
-
-class TestParseKeyVals(unittest.TestCase):
-
-    """
-    newlinejson.nlj.parse_key_vals()
-    """
-
-    def test_parse(self):
-
-        # Turn ['k1=v1', 'k2=v2'] into {'k1': 'v1', 'k2': 'v2'}
-        pairs = ['k1=v1', 'k2=v2']
-        expected = {'k1': 'v1', 'k2': 'v2'}
-        self.assertDictEqual(expected, nlj.parse_key_vals(pairs))
-
-    def test_exception(self):
-
-        # Make sure appropriate exceptions are raised
-        self.assertRaises(ValueError, nlj.parse_key_vals, ['no_equals'])
-
-
-def test_parse_list():
-
-    # A string containing commas should be split into a list of elements
-    val = "field1,field2,field3,field4,field5"
-    assert nlj.parse_list(None, None, val) == val.split(',')
-
-
-def test_cast():
-
-    def none(arg):
-        if arg.strip().lower() == 'none':
-            return None
-        else:
-            raise ValueError("Not 'none': %s" % arg)
-
-    def true(arg):
-        if arg.strip().lower() == 'true':
-            return True
-        else:
-            raise ValueError("Not 'true': %s" % arg)
-
-    def false(arg):
-        if arg.strip().lower() == 'false':
-            return False
-        else:
-            raise ValueError("Not 'false': %s" % arg)
-
-    for string, caster in (('1', int), ('1.', float), ('.1', float), ('0.1', float),
-                           ('1.0', float), ('StRiNg', str), ('tRuE', true), ('fAlSe', false),
-                           ('nOnE', none), ('[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]', json.loads)):
-        assert caster(string) == nlj.cast(None, None, string)
 
 
 class TestGeneralOptions(unittest.TestCase):
