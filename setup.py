@@ -18,15 +18,11 @@ with open('LICENSE.txt') as f:
     license = f.read().strip()
 
 
-with open('requirements.txt') as f:
-    install_requires = f.read().strip()
-
-
 version = None
 author = None
 email = None
 source = None
-with open(os.path.join('newlinejson', '__init__.py')) as f:
+with open('newlinejson.py') as f:
     for line in f:
         if line.strip().startswith('__version__'):
             version = line.split('=')[1].strip().replace('"', '').replace("'", '')
@@ -36,6 +32,8 @@ with open(os.path.join('newlinejson', '__init__.py')) as f:
             email = line.split('=')[1].strip().replace('"', '').replace("'", '')
         elif line.strip().startswith('__source__'):
             source = line.split('=')[1].strip().replace('"', '').replace("'", '')
+        elif None not in (version, author, email, source):
+            break
 
 
 setuptools.setup(
@@ -51,17 +49,12 @@ setuptools.setup(
         'Programming Language :: Python :: 3.4',
     ],
     description="Streaming newline delimited JSON I/O",
-    entry_points="""
-        [console_scripts]
-        nlj=newlinejson.nlj:main
-    """,
     include_package_data=True,
-    install_requires=install_requires,
     keywords='streaming newline delimited json',
     license=license,
     long_description=readme,
     name='NewlineJSON',
-    packages=setuptools.find_packages(),
+    py_modules=['newlinejson'],
     url=source,
     version=version,
     zip_safe=True

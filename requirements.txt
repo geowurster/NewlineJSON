@@ -1,2 +1,0 @@
-click
-str2type
