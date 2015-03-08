@@ -59,7 +59,7 @@ def main(infile):
     # Test against all found libraries
     for json_lib in (json, jsonlib2, simplejson, ujson, yajl):
         if json_lib is not None:
-            newlinejson.core.JSON = json_lib
+            newlinejson.JSON = json_lib
 
             # Update user
             start_time = datetime.datetime.now()
