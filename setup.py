@@ -10,7 +10,7 @@ import os
 import setuptools
 
 
-with open('README.md') as f:
+with open('README.rst') as f:
     readme = f.read().strip()
 
 
