@@ -7,7 +7,10 @@ Setup script for NewlineJSON
 
 
 import os
-import setuptools
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 
 with open('README.rst') as f:
@@ -22,7 +25,7 @@ version = None
 author = None
 email = None
 source = None
-with open('newlinejson.py') as f:
+with open(os.path.join('newlinejson', '__init__.py')) as f:
     for line in f:
         if line.strip().startswith('__version__'):
             version = line.split('=')[1].strip().replace('"', '').replace("'", '')
@@ -36,7 +39,7 @@ with open('newlinejson.py') as f:
             break
 
 
-setuptools.setup(
+setup(
     author=author,
     author_email=email,
     classifiers=[
@@ -48,13 +51,13 @@ setuptools.setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
     ],
-    description="Streaming newline delimited JSON I/O",
+    description="Streaming newline delimited JSON I/O with transparent compression",
     include_package_data=True,
     keywords='streaming newline delimited json',
     license=license,
     long_description=readme,
     name='NewlineJSON',
-    py_modules=['newlinejson'],
+    packages=['newlinejson'],
     url=source,
     version=version,
     zip_safe=True
