@@ -3,7 +3,10 @@ Streaming newline delimited JSON I/O with transparent compression.
 """
 
 
-__version__ = '0.2'
+from .core import *
+
+
+__version__ = '0.3'
 __author__ = 'Kevin Wurster'
 __email__ = 'wursterk@gmail.com'
 __source__ = 'https://github.com/geowurster/NewlineJSON'
@@ -37,12 +40,3 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 '''
-
-
-from ._io import COMPRESSION_FORMATS
-from ._io import dump
-from ._io import dumps
-from ._io import load
-from ._io import loads
-from ._io import open
-from ._io import Stream

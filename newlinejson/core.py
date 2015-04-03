@@ -11,24 +11,17 @@ except ImportError:
     from StringIO import StringIO
 
 
+__all__ = ['open', 'Stream', 'load', 'loads', 'dump', 'dumps']
+
+
 # Need this inside the new open function
 builtin_open = open
 
 
-__all__ = ['open', 'Stream', 'load', 'loads', 'dump', 'dumps', 'COMPRESSION_FORMATS']
-
 JSON_LIB = json
 
-COMPRESSION_FORMATS = {
-    'gzip': 'gzip',
-    'gz': 'gzip',
-    'zip': 'zip',
-    'bz2': 'bz2',
-    'tar': 'tar'
-}
 
-
-def open(path, mode='r', cmode=None, compression=None, co=None, **kwargs):
+def open(path, mode='r', cmode=None, compression=None, co=None, oo=None, **kwargs):
 
     """
     Open a file path (or stdin) for I/O operations and return a `Stream()` instance.
@@ -62,8 +55,11 @@ def open(path, mode='r', cmode=None, compression=None, co=None, **kwargs):
         auto-detected from the file path or `name` attribute if `path` is an
         instance of `file`.  Use `False` to disable auto-detection.
     co : dict or None, optional
-
+        Additional keyword arguments for the compression library.
+    oo : dict or None, optional
+        Additional keyword arguments for Python's built-in `open()` function.
     kwargs : **kwargs, optional
+        Additional keyword arguments for `Stream()`.
 
     Returns
     -------
@@ -74,13 +70,15 @@ def open(path, mode='r', cmode=None, compression=None, co=None, **kwargs):
         cmode = mode
     if co is None:
         co = {}
+    if oo is None:
+        oo = {}
 
     # Compression was specified or should be auto-detected
     if compression is not False:
 
         # Try to get compression from the extension
         if compression is None:
-            if isinstance(path, file) and hasattr(path, 'name'):
+            if (hasattr(path, 'next') or hasattr(path, '__next__')) and hasattr(path, 'name'):
                 _prefix = path.name
             else:
                 _prefix = path
@@ -91,29 +89,22 @@ def open(path, mode='r', cmode=None, compression=None, co=None, **kwargs):
     if compression:
 
         # Instantiate a compression driver
-        frmts = COMPRESSION_FORMATS[compression]
-        if compression in frmts:
+        if compression in ('gz', 'gzip'):
             import gzip
             stream = gzip.open(path, cmode, **co)
-        elif compression in frmts:
-            import zipfile
-            stream = zipfile.ZipFile(path, cmode, **co)
-        elif compression in frmts:
+        elif compression in ('bz2', 'bzip2'):
             import bz2
             stream = bz2.BZ2File(path, cmode, **co)
-        elif compression in frmts:
-            import tarfile
-            stream = tarfile.open(path, cmode, **co)
         else:
-            raise ValueError("Compression `%s' is unsupported: %s" % ', '.join(list(COMPRESSION_FORMATS.keys())))
+            raise ValueError("Compression `%s' is unsupported")
 
     # Input path is actually a file-like object, which can just be dropped into Stream()
-    elif isinstance(path, file):
+    elif hasattr(path, 'next') or hasattr(path, '__next__'):
         stream = path
 
     # Input path is a file-path and needs to be opened
     else:
-        stream = builtin_open(path, mode, **co)
+        stream = builtin_open(path, mode, **oo)
 
     return Stream(stream, mode=mode, **kwargs)
 
