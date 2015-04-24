@@ -1,42 +1,9 @@
 """
-Streaming newline delimited JSON I/O
+DEPRECATED - will be removed before v1.0
+
+Old newlinejson.py stripped down to include only the bare-necessities to prevent
+anything from breaking.
 """
-
-
-__version__ = '0.2'
-__author__ = 'Kevin Wurster'
-__email__ = 'wursterk@gmail.com'
-__source__ = 'https://github.com/geowurster/NewlineJSON'
-__license__ = '''
-New BSD License
-
-Copyright (c) 2014, Kevin D. Wurster
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* The names of its contributors may not be used to endorse or promote products
-  derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-'''
 
 
 import json
@@ -49,6 +16,7 @@ except ImportError:  # pragma no cover
     except ImportError:
         from StringIO import StringIO
 import sys
+import warnings
 
 
 JSON = json
@@ -60,111 +28,6 @@ if PY3:  # pragma no cover
     STR_TYPES = (str)
 else:  # pragma no cover
     STR_TYPES = (str, unicode)
-
-
-__all__ = [
-    'load', 'loads', 'dump', 'dumps', 'Reader', 'Writer',
-]
-
-
-def load(f, **kwargs):
-
-    """
-    Load an entire file of newline delimited JSON into a list where each element
-    is a line.  Only use on small files.
-
-    Parameters
-    ----------
-    f : file
-        Open file object from which newline JSON is read.
-    kwargs : **kwargs, optional
-        Additional keyword arguments for the `Reader()` class.
-
-    Returns
-    -------
-    list
-        One decoded JSON element per line in the input file.
-    """
-
-    return [line for line in Reader(f, **kwargs)]
-
-
-def loads(string, **kwargs):
-
-    """
-    Same as `load()` but the input is a string instead of a file object.
-
-    Parameters
-    ----------
-    kwargs : **kwargs, optional
-        Keyword arguments for `Reader.from_string()`
-    string : str
-        Contains newline delimited JSON
-
-    Returns
-    -------
-    list
-        One decoded JSON element per line in the input string.
-    """
-
-    return [line for line in Reader.from_string(string, **kwargs)]
-
-
-def dump(line_list, f, **kwargs):
-
-    """
-    Write a list of JSON objects to an output file one line at a time.
-
-    Parameters
-    ----------
-    f : file
-        Handle to an open writable file object.
-    line_list : list, tuple
-        A list of JSON objects to be written.
-    kwargs : **kwargs, optional
-        Additional keyword arguments for the `Writer()` class.
-
-    Returns
-    -------
-    True
-        On success
-    """
-
-    writer = Writer(f, **kwargs)
-    for line in line_list:
-        writer.write(line)
-
-    return True
-
-
-def dumps(line_list, container=StringIO, **kwargs):
-
-    """
-    Same as `dump()` but a string is returned instead of writing each line to
-    an output file.
-
-    Parameters
-    ----------
-    line_list : list, tuple
-        A list of JSON objects to be encoded to a string.
-    container : StringIO, optional
-        File-like object to write to.  Must support `.read()` like `StringIO`
-        or `file`.
-    kwargs : **kwargs, optional
-        Additional keyword arguments for the `Writer()` class.
-
-    Returns
-    -------
-    str
-        Newline delimited JSON string.
-    """
-
-    f = container()
-    writer = Writer(f, **kwargs)
-    for line in line_list:
-        writer.write(line)
-    f.seek(0)
-    return f.read()
 
 
 class Reader(object):
@@ -221,6 +84,9 @@ class Reader(object):
         skip_failures : bool
             Are failures being skipped?
         """
+
+        warnings.warn("`newlinejson.Reader()` is deprecated and will be removed before "
+                      "v1.0.  Switch to `newlinejson.open()`.", FutureWarning, stacklevel=2)
 
         self._f = f
         self.skip_lines = skip_lines
@@ -381,6 +247,9 @@ class Writer(object):
         skip_failures : bool
             Are failures being skipped?
         """
+
+        warnings.warn("`newlinejson.Writer()` is deprecated and will be removed before "
+                      "v1.0.  Switch to `newlinejson.open()`.", FutureWarning, stacklevel=2)
 
         self._f = f
         self.skip_failures = skip_failures

@@ -1,5 +1,4 @@
 coverage
+coveralls
 nose
-simplejson
 ujson
-yajl
