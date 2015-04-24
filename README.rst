@@ -5,7 +5,7 @@ NewlineJSON
 Streaming newline delimited JSON I/O.
 
 .. image:: https://travis-ci.org/geowurster/NewlineJSON.svg?branch=master
-    :target: https://travis-ci.org/geowurster/NewlineJSON
+    :target: https://travis-ci.org/geowurster/NewlineJSON?branch=master
 
 .. image:: https://coveralls.io/repos/geowurster/NewlineJSON/badge.svg?branch=master
     :target: https://coveralls.io/r/geowurster/NewlineJSON?branch=master
@@ -76,7 +76,7 @@ use and intuitive manner, not to provide highly optimized I/O.  If Python's
 built-in JSON isn't fast enough but newline delimited JSON is the right answer
 to your problem, one of many faster JSON libraries can be used globally with
 ``newlinejson.core.JSON = module`` or by setting ``json_lib=module`` as a keyword
-argument in `open()`, `load()`, etc.
+argument in ``open()``, ``load()``, etc.
 
 
 Installing
