@@ -8,7 +8,10 @@ python:
   - "pypy3"
 
 install:
-  - pip install -r requirements-dev.txt -e .
+  - pip install nose
+  - pip install coverage
+  - pip install coveralls
+  - pip install .
 
 script:
   - nosetests --with-coverage

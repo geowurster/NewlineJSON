@@ -212,19 +212,19 @@ def test_declare_json_lib():
         assert src.json_lib == jlib
 
 
-if ujson is not None:
-    def test_round_robin_with_ujson():
-        nlj.core.JSON_LIB = ujson
-        with nlj.open(sample_data.MIXED_JSON_PATH) as src, \
-                nlj.open(tempfile.NamedTemporaryFile(mode='r+'), 'w') as dst:
-
-            assert src.json_lib == ujson
-            assert dst.json_lib == ujson
-
-            for line in src:
-                dst.write(line)
-            dst.stream.seek(0)
-            src.stream.seek(0)
-            compare_iterables(src, nlj.loads(dst.stream.read()))
-        nlj.core.JSON_LIB = json
-        assert nlj.core.JSON_LIB == json
+# if ujson is not None:
+#     def test_round_robin_with_ujson():
+#         nlj.core.JSON_LIB = ujson
+#         with nlj.open(sample_data.MIXED_JSON_PATH) as src, \
+#                 nlj.open(tempfile.NamedTemporaryFile(mode='r+'), 'w') as dst:
+#
+#             assert src.json_lib == ujson
+#             assert dst.json_lib == ujson
+#
+#             for line in src:
+#                 dst.write(line)
+#             dst.stream.seek(0)
+#             src.stream.seek(0)
+#             compare_iterables(src, nlj.loads(dst.stream.read()))
+#         nlj.core.JSON_LIB = json
+#         assert nlj.core.JSON_LIB == json
