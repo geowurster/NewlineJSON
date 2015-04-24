@@ -68,13 +68,13 @@ It probably isn't.  If you're looking for a module to incorporate into a high
 capacity data pipeline or bandwidth limited environment you definitely want a
 packed-binary format.  If you're working with a small amount of local data to
 produce a one-off product, proofing a workflow, or want to provide additional
-I/O capabilities to a commandline application reading/writing from/to stdin/
-stdout, this module is pretty easy to work with.
+I/O capabilities to a commandline application reading/writing from/to stdin/stdout,
+this module is pretty easy to work with.
 
 The goal of this module is to fill a gap in the Python ecosystem in an easy to
 use and intuitive manner, not to provide highly optimized I/O.  If Python's
-built-in JSON isn't fast enough but newline delimited JSON is the right answer
-to your problem, one of many faster JSON libraries can be used globally with
+built-in JSON library isn't fast enough but newline delimited JSON is the right
+answer to your problem, one of many faster JSON libraries can be used globally with
 ``newlinejson.core.JSON = module`` or by setting ``json_lib=module`` as a keyword
 argument in ``open()``, ``load()``, etc.
 
@@ -86,7 +86,7 @@ Via pip:
 
 .. code-block:: console
 
-    $ pip install newlinejson
+    $ pip install NewlineJSON
 
 From master:
 

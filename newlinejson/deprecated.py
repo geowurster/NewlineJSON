@@ -25,7 +25,7 @@ JSON = json
 # Python 2/3 compatibility
 PY3 = sys.version_info[0] is 3
 if PY3:  # pragma no cover
-    STR_TYPES = (str)
+    STR_TYPES = str,
 else:  # pragma no cover
     STR_TYPES = (str, unicode)
 
@@ -36,8 +36,8 @@ class Reader(object):
     Stream newline delimited JSON.
     """
 
-    def __init__(self, f, skip_lines=0, skip_failures=False, skip_empty=True, empty_val=None, fail_val=None,
-                 json_lib=None, **kwargs):
+    def __init__(self, f, skip_lines=0, skip_failures=False, skip_empty=True, empty_val=None,
+                 fail_val=None, json_lib=None, **kwargs):
 
         """
         Read a file containing newline delimited JSON.
@@ -134,7 +134,7 @@ class Reader(object):
         return self._failures
 
     @classmethod
-    def from_string(cls, string, container=StringIO, **kwargs):
+    def from_string(cls, string, container=StringIO, **kwargs):  # pragma no cover
 
         """
         Create a `Reader()` instance with a string containing newline delimited

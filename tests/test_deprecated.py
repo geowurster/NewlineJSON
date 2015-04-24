@@ -100,14 +100,16 @@ class TestReader(unittest.TestCase):
 
     def test_bad_line_no_exception(self):
 
-        # The skip_failures argument should cause a bad line to be skipped and the fail_val to be returned
+        # The skip_failures argument should cause a bad line to be skipped and the
+        # fail_val to be returned
         for fail_val in [None, 1, 1.23, float, int, object, '', str, {}, []]:
             with StringIO('[') as f:
                 reader = newlinejson.Reader(f, skip_failures=True, fail_val=fail_val)
                 self.assertEqual(reader.next(), fail_val)
 
     def test_empty_line(self):
-        # If skip_empty=False then some user-defined value is returned instead of an empty line
+        # If skip_empty=False then some user-defined value is returned instead of
+        # an empty line
         for empty_val in [None, 1, 1.23, float, int, object, '', str, {}, []]:
             with StringIO(' ') as f:
                 reader = newlinejson.Reader(f, skip_empty=False, empty_val=empty_val)
@@ -121,12 +123,13 @@ class TestReader(unittest.TestCase):
             # Create some new content that has a bunch of empty lines
             blank = ''
             with StringIO(content) as c1, StringIO(content) as c2:
-                content_lines = c1.readlines() + [blank, blank, blank] + c2.readlines() + [blank]
-            content_lines_expected = [line.strip() for line in content_lines if line != blank]
+                content_lines = (c1.readlines() + [blank, blank, blank] +
+                                 c2.readlines() + [blank])
+            content_lines_expected = [
+                line.strip() for line in content_lines if line != blank]
 
-            # At this point content_lines contains some blanks and content_lines_expected contains no blanks
-            # and is what the output should look like
-
+            # At this point content_lines contains some blanks and content_lines_expected
+            # contains no blanks and is what the output should look like
             with StringIO(os.linesep.join(content_lines)) as a_f, \
                     StringIO(os.linesep.join(content_lines_expected)) as e_f:
                 reader = newlinejson.Reader(a_f, skip_empty=True)
@@ -142,7 +145,8 @@ class TestReader(unittest.TestCase):
 
     def test_read_mixed_types(self):
         # Read lines of mixed types
-        content = os.linesep.join([l.strip() for l in SAMPLE_FILE_CONTENTS.values() if l.strip() != ''])
+        content = os.linesep.join(
+            [l.strip() for l in SAMPLE_FILE_CONTENTS.values() if l.strip() != ''])
         with StringIO(content) as a_f, StringIO(content) as e_f:
             reader = newlinejson.Reader(a_f)
             for actual, expected in zip(reader, e_f):
@@ -203,8 +207,8 @@ class TestWriter(unittest.TestCase):
                 for line in expected_lines:
                     self.assertTrue(writer.write(line))
 
-                # Test lines - the writer writes a delimiter to the very end of the file that must be removed in order
-                # to compare
+                # Test lines - the writer writes a delimiter to the very end of the file
+                # that must be removed in order to compare
                 f.seek(0)
                 actual = f.read()
                 expected = new_delim.join([json.dumps(i) for i in expected_lines]) + new_delim
