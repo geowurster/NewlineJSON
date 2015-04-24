@@ -5,13 +5,13 @@ python:
   - "3.3"
   - "3.4"
   - "pypy"
+  - "pypy3"
 
 install:
-  - pip install -r requirements-dev.txt
-  - pip install .
+  - pip install -r requirements-dev.txt -e .
 
 script:
-  - coverage run  --source=newlinejson -m py.test tests
+  - nosetests --with-coverage
 
 after_success:
   - coveralls

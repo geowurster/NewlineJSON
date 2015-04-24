@@ -1,14 +1,17 @@
 """
-I/O components for NewlineJSON
+core components for NewlineJSON
 """
 
 
 import json
 import os
-try:
+try:  # pragma no cover
     from io import StringIO
-except ImportError:
+except ImportError:  # pragma no cover
     from StringIO import StringIO
+
+from .pycompat import string_types
+from .pycompat import PY2
 
 
 __all__ = ['open', 'Stream', 'load', 'loads', 'dump', 'dumps']
@@ -21,26 +24,11 @@ builtin_open = open
 JSON_LIB = json
 
 
-def open(path, mode='r', cmode=None, compression=None, co=None, oo=None, **kwargs):
+def open(path, mode='r', open_args=None, **stream_args):
 
     """
-    Open a file path (or stdin) for I/O operations and return a `Stream()` instance.
-
-    Several compression formats are supported transparently and are auto-detected
-    based on the input file-path.  See the global `COMPRESSION_FORMATS` variable
-    for a dictionary of supported format names and their associated file extensions.
-    Auto-detection is disabled if `path` is an instance of `file` or if the
-    `compression` option is `False`.  If a path to a compressed file is given
-    but auto-detection continually fails, explicitly specify `compression=name`.
-
-    Some compression formats support more than just modes 'r', 'w', and 'a'.
-    By default the I/O mode passed to the compression library is `mode` but if
-    a special compression mode is desired use `cmode` as long as it complements
-    `mode`.  Using `mode='r'` and `cmode='w'` will yield a locked datasource
-    and probably some weird exceptions.  Additional kwargs or 'compression
-    options' can be passed to the compression library with `co={'name': 'val'}`.
-    If no compression is used `co` is passed to Python's builtin `open()` function
-    as `**kwargs`.
+    Open a file path or file-like object for I/O operations and return a loaded
+    `Stream()` instance.
 
     Parameters
     ----------
@@ -48,17 +36,9 @@ def open(path, mode='r', cmode=None, compression=None, co=None, oo=None, **kwarg
         Input file path or `file` instance.
     mode : str, optional
         I/O mode like 'r', 'w', or 'a'.  Defaults to 'r'.
-    cmode : str, optional
-        I/O mode for compression library.  Defaults to `mode`.
-    compression: str or None or False, optional
-        Name of compression library to use.  If `None` compression will be
-        auto-detected from the file path or `name` attribute if `path` is an
-        instance of `file`.  Use `False` to disable auto-detection.
-    co : dict or None, optional
-        Additional keyword arguments for the compression library.
-    oo : dict or None, optional
+    open_args : dict or None, optional
         Additional keyword arguments for Python's built-in `open()` function.
-    kwargs : **kwargs, optional
+    stream_args : **kwargs, optional
         Additional keyword arguments for `Stream()`.
 
     Returns
@@ -66,47 +46,17 @@ def open(path, mode='r', cmode=None, compression=None, co=None, oo=None, **kwarg
     Stream
     """
 
-    if cmode is None:
-        cmode = mode
-    if co is None:
-        co = {}
-    if oo is None:
-        oo = {}
+    if open_args is None:
+        open_args = {}
 
-    # Compression was specified or should be auto-detected
-    if compression is not False:
-
-        # Try to get compression from the extension
-        if compression is None:
-            if (hasattr(path, 'next') or hasattr(path, '__next__')) and hasattr(path, 'name'):
-                _prefix = path.name
-            else:
-                _prefix = path
-            _c_test = _prefix.rpartition('.')[-1]
-            if _c_test not in ('json', 'nljson', 'newlinejson'):
-                compression = _c_test
-
-    if compression:
-
-        # Instantiate a compression driver
-        if compression in ('gz', 'gzip'):
-            import gzip
-            stream = gzip.open(path, cmode, **co)
-        elif compression in ('bz2', 'bzip2'):
-            import bz2
-            stream = bz2.BZ2File(path, cmode, **co)
-        else:
-            raise ValueError("Compression `%s' is unsupported")
-
-    # Input path is actually a file-like object, which can just be dropped into Stream()
-    elif hasattr(path, 'next') or hasattr(path, '__next__'):
-        stream = path
-
-    # Input path is a file-path and needs to be opened
+    if isinstance(path, string_types):
+        input_stream = builtin_open(path, **open_args)
+    elif hasattr(path, '__iter__'):
+        input_stream = path
     else:
-        stream = builtin_open(path, mode, **oo)
+        raise TypeError("Path must be a filepath or an iterable file-like object.")
 
-    return Stream(stream, mode=mode, **kwargs)
+    return Stream(input_stream, mode=mode, **stream_args)
 
 
 class Stream(object):
@@ -115,10 +65,10 @@ class Stream(object):
     Perform I/O operations on a stream of newline delimited JSON.
     """
 
-    modes = ('r', 'w', 'a')
+    io_modes = ('r', 'w', 'a')
 
     def __init__(self, stream, mode='r', skip_lines=0, skip_failures=False, linesep=os.linesep,
-                 json_lib=JSON_LIB, **kwargs):
+                 json_lib=None, **stream_args):
 
         """
         Connect to an open file-like object containing string encoded newline JSON.
@@ -132,9 +82,9 @@ class Stream(object):
         Parameters
         ----------
         stream : file
-            An open file-like object for reading and writing.  Object should have
-            been opened with a mode that compliments `mode` although this is not
-            checked to allow support for compression specific I/O modes.
+            An open file-like object for reading or writing.  Object should have
+            been opened with a mode that compliments ``mode`` although this is not
+            checked to allow support for more customized file handling.
         mode : str, optional
             I/O mode stream should operate in.  Must be 'r', 'a', or 'w'.
         skip_lines : int, optional
@@ -150,20 +100,27 @@ class Stream(object):
             The built-in JSON library works fine but is slow.  There are other
             faster implementations that will be used if set via the global
             `JSON_LIB` variable or the instance `json_lib` variable.
-        kwargs : **kwargs, optional
+        stream_args : **stream_args, optional
             Additional keyword arguments for `json_lib.dumps/loads()`.
         """
 
-        if mode not in self.modes:
-            raise ValueError("Mode `%s' is unrecognized: %s" % ', '.join(self.modes))
+        global JSON_LIB
+
+        if json_lib is None:
+            self.json_lib = JSON_LIB
+        else:
+            self.json_lib = json_lib
+
+        if mode not in self.io_modes:
+            raise ValueError("Mode `%s' is unrecognized: %s"
+                             % (mode, ', '.join(self.io_modes)))
         if skip_lines < 0:
             raise ValueError("skip_lines must be > 0")
 
-        self.json_lib = json_lib
         self.skip_failures = skip_failures
         self._mode = mode
         self._stream = stream
-        self._kwargs = kwargs
+        self._kwargs = stream_args
         self._is_closed = False
         self._linesep = linesep
         for i in range(skip_lines):
@@ -239,21 +196,21 @@ class Stream(object):
         Read a line from the underlying file-like object and convert it to JSON.
         If `skip_failures` is `True` then exceptions will be logged rather than
         thrown and each `next()` call will read until it successfully decodes a
-        line or until it reaches the end of the file.  `kwargs` will be passed
+        line or until it reaches the end of the file.  `stream_args` will be passed
         to `json_lib.dumps()`. Raises an exception if `Stream()` isn't open for
         reading.
 
         Raises
         ------
-        IOError
+        OSError
             If `Stream()` is not open with mode `r` or `a` or if the instance has
             been closed via `close()`.
         """
 
         if self._mode != 'r':
-            raise IOError("Stream not open for reading")
+            raise OSError("Stream not open for reading")
         elif self.closed:
-            raise IOError("Can't operate on a closed stream")
+            raise OSError("Can't operate on a closed stream")
 
         line = None
         while line is None:
@@ -273,7 +230,7 @@ class Stream(object):
 
         """
         Write a JSON object to the underlying file-like object.  If `skip_failures`
-        is `True` then exceptions will be logged rather than thrown and `kwargs`
+        is `True` then exceptions will be logged rather than thrown and `stream_args`
         will be passed to `json_lib.dumps()`. Raises an exception if `Stream()`
         isn't open for writing.
 
@@ -284,18 +241,21 @@ class Stream(object):
 
         Raises
         ------
-        IOError
+        OSError
             If `Stream()` is not open with mode `w` or if the instance has been
             closed via `close()`.
         """
 
         if self._mode not in ('w', 'a'):
-            raise IOError("Stream not open for writing")
+            raise OSError("Stream not open for writing")
         elif self.closed:
-            raise IOError("Can't operate on a closed stream")
+            raise OSError("Can't operate on a closed stream")
 
         try:
-            return self._stream.write(self.json_lib.dumps(obj, **self._kwargs) + self._linesep)
+            encoded = self.json_lib.dumps(obj, **self._kwargs)
+            if PY2:  # pragma no cover
+                encoded = encoded.decode('utf-8')
+            return self._stream.write(encoded + self._linesep)
         except Exception as e:
             if not self.skip_failures:
                 raise e
@@ -313,23 +273,26 @@ class Stream(object):
         self._is_closed = True
 
 
-def load(f, **kwargs):
+def load(f, **stream_args):
 
     """
-    Load an open file into `Stream()`.
+    Use `open()` instead.  Provided only to match the builtin `json`
+    library's functionality.
+
+    Load an open file-like object into `Stream()`.
 
     Parameters
     ----------
     f : file
         File-like object open for reading.
-    kwargs : **kwargs, optional
+    stream_args : **stream_args, optional
         Additional keyword arguments for `Stream()`.
     """
 
-    return Stream(f, **kwargs)
+    return Stream(f, **stream_args)
 
 
-def loads(string, **kwargs):
+def loads(string, **stream_args):
 
     """
     Load newline JSON encoded as a string into a `Stream()` instance.
@@ -338,44 +301,46 @@ def loads(string, **kwargs):
     ----------
     string : str
         Newline JSON encoded as a string.
-    kwargs : **kwargs, optional
+    stream_args : **stream_args, optional
         Additional keyword arguments for `Stream()`.
     """
 
-    with StringIO(string) as f:
-        return Stream(f, **kwargs)
+    if PY2:  # pragma no cover
+        string = string.decode('utf-8')
+
+    return Stream(StringIO(string), **stream_args)
 
 
-def dump(obj, f, **kwargs):
+def dump(collection, f, **stream_args):
 
     """
     Dump a collection of JSON objects into a file.
 
     Parameters
     ----------
-    obj : iterable
-        Object that produces one JSON object per iteration.
+    collection : iterable
+        Iterable that produces one JSON object per iteration.
     f : file
         File-like object open for writing.
-    kwargs : **kwargs, optional
+    stream_args : **stream_args, optional
         Additional keyword arguments for `Stream()`.
     """
 
-    dst = Stream(f, 'w', **kwargs)
-    for item in obj:
+    dst = Stream(f, 'w', **stream_args)
+    for item in collection:
         dst.write(item)
 
 
-def dumps(obj, **kwargs):
+def dumps(collection, **stream_args):
 
     """
     Dump a collection of JSON objects into a string.
 
     Parameters
     ----------
-    obj : iterable
-        Object that produces one JSON object per iteration.
-    kwargs : **kwargs, optional
+    collection : iterable
+        Iterable that produces one JSON object per iteration.
+    stream_args : **stream_args, optional
         Additional keyword arguments for `Stream()`.
 
     Returns
@@ -384,8 +349,8 @@ def dumps(obj, **kwargs):
     """
 
     with StringIO() as f:
-        dst = Stream(f, 'w', **kwargs)
-        for item in obj:
+        dst = Stream(f, 'w', **stream_args)
+        for item in collection:
             dst.write(item)
         f.seek(0)
         return f.read()
