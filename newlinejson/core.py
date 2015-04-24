@@ -84,24 +84,6 @@ class Stream(object):
         present in the stream.
 
 
-        Attributes
-        ----------
-        closed : bool
-            Is the stream open for I/O operations?
-
-        json_lib : module
-            The JSON library currently being used for encoding and decoding.
-
-        mode : str
-            I/O mode of the `Stream()` instance.
-
-        skip_failures : bool
-            Are failures being logged or thrown?
-
-        stream : file-like object
-            The underlying file-like object being read from or written to.
-
-
         Parameters
         ----------
         stream : file
@@ -131,6 +113,24 @@ class Stream(object):
 
         stream_args : **stream_args, optional
             Additional keyword arguments for `json_lib.dumps/loads()`.
+
+
+        Attributes
+        ----------
+        closed : bool
+            Is the stream open for I/O operations?
+
+        json_lib : module
+            The JSON library currently being used for encoding and decoding.
+
+        mode : str
+            I/O mode of the `Stream()` instance.
+
+        skip_failures : bool
+            Are failures being logged or thrown?
+
+        stream : file-like object
+            The underlying file-like object being read from or written to.
         """
 
         global JSON_LIB
