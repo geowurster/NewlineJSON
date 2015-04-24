@@ -5,16 +5,15 @@ Core components for NewlineJSON
 
 import json
 import os
-try:  # pragma no cover
-    from io import StringIO
-except ImportError:  # pragma no cover
-    from StringIO import StringIO
+from io import StringIO
 
 from .pycompat import string_types
 from .pycompat import PY2
+from .deprecated import Reader
+from .deprecated import Writer
 
 
-__all__ = ['open', 'Stream', 'load', 'loads', 'dump', 'dumps']
+__all__ = ['open', 'Stream', 'load', 'loads', 'dump', 'dumps', 'Reader', 'Writer']
 
 
 # Need this inside the new open function
