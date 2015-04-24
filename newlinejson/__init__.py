@@ -9,7 +9,7 @@ Example:
 
     import newlinejson as nlj
 
-    with nlj.open('sample-data/dictionaries.json') as src, \
+    with nlj.open('sample-data/dictionaries.json') as src, \\
             with nlj.open('out.json', 'w') as dst:
         for line in src:
             dst.write(line)
