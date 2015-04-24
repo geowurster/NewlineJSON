@@ -1,5 +1,26 @@
 """
-Streaming newline delimited JSON I/O with transparent compression.
+Streaming newline delimited JSON I/O.
+
+Calling ``newlinejson.open()`` returns a loaded instance of ``newlinejson.Stream()``,
+which generally acts like a file-like object.  See ``help(newlinejson.Stream)``
+for more information.
+
+Example:
+
+    import newlinejson as nlj
+
+    with nlj.open('sample-data/dictionaries.json') as src, \
+            with nlj.open('out.json', 'w') as dst:
+        for line in src:
+            dst.write(line)
+
+    with open('out.json') as f:
+        print(f.read()))
+    {'field2': 'l1f2', 'field3': 'l1f3', 'field1': 'l1f1'}
+    {'field2': 'l2f2', 'field3': 'l2f3', 'field1': 'l2f1'}
+    {'field2': 'l3f2', 'field3': 'l3f3', 'field1': 'l3f1'}
+    {'field2': 'l4f2', 'field3': 'l4f3', 'field1': 'l4f1'}
+    {'field2': 'l5f2', 'field3': 'l5f3', 'field1': 'l5f1'}
 """
 
 

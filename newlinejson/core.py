@@ -1,5 +1,5 @@
 """
-core components for NewlineJSON
+Core components for NewlineJSON
 """
 
 
@@ -30,16 +30,21 @@ def open(path, mode='r', open_args=None, **stream_args):
     Open a file path or file-like object for I/O operations and return a loaded
     `Stream()` instance.
 
+
     Parameters
     ----------
     path : str or file
         Input file path or `file` instance.
+
     mode : str, optional
         I/O mode like 'r', 'w', or 'a'.  Defaults to 'r'.
+
     open_args : dict or None, optional
         Additional keyword arguments for Python's built-in `open()` function.
+
     stream_args : **kwargs, optional
         Additional keyword arguments for `Stream()`.
+
 
     Returns
     -------
@@ -71,13 +76,32 @@ class Stream(object):
                  json_lib=None, **stream_args):
 
         """
-        Connect to an open file-like object containing string encoded newline JSON.
-        Use `open()` to directly interact with files on disk and different various
-        compression formats.
+        Connect to an open file-like object containing newline delimited JSON.
+        This class is the core component of NewlineJSON and behaves similarly
+        to a file-like object.
 
         Three I/O modes are supported: 'r' for reading data, 'a' for appending to
         an existing stream, and 'w' for overwriting any data that may already be
         present in the stream.
+
+
+        Attributes
+        ----------
+        closed : bool
+            Is the stream open for I/O operations?
+
+        json_lib : module
+            The JSON library currently being used for encoding and decoding.
+
+        mode : str
+            I/O mode of the `Stream()` instance.
+
+        skip_failures : bool
+            Are failures being logged or thrown?
+
+        stream : file-like object
+            The underlying file-like object being read from or written to.
+
 
         Parameters
         ----------
@@ -85,21 +109,27 @@ class Stream(object):
             An open file-like object for reading or writing.  Object should have
             been opened with a mode that compliments ``mode`` although this is not
             checked to allow support for more customized file handling.
+
         mode : str, optional
             I/O mode stream should operate in.  Must be 'r', 'a', or 'w'.
+
         skip_lines : int, optional
             Immediately skip the first N lines of the input file if reading.
+
         skip_failures : bool, optional
             Normally when a JSON object or string can't be encoded or decoded
-            an exception is raised.  Setting `skip_failures` to `True` causes
+            an exception is raised.  Setting ``skip_failures`` to ``True`` causes
             these exceptions to be logged rather than thrown.  See `next()` and
             `write()` for more information about how this is handled.
+
         linesep : str, optional
-            Newline delimiter to write after each line.  Defaults to `os.linesep`.
+            Newline delimiter to write after each line.  Defaults to ``os.linesep``.
+
         json_lib : module, optional
             The built-in JSON library works fine but is slow.  There are other
             faster implementations that will be used if set via the global
-            `JSON_LIB` variable or the instance `json_lib` variable.
+            ``JSON_LIB`` variable or the instance `json_lib` variable.
+
         stream_args : **stream_args, optional
             Additional keyword arguments for `json_lib.dumps/loads()`.
         """
@@ -239,6 +269,7 @@ class Stream(object):
         obj : list or dict
             An object to encode as JSON and write.
 
+
         Raises
         ------
         OSError
@@ -281,6 +312,7 @@ def load(f, **stream_args):
 
     Load an open file-like object into `Stream()`.
 
+
     Parameters
     ----------
     f : file
@@ -296,6 +328,7 @@ def loads(string, **stream_args):
 
     """
     Load newline JSON encoded as a string into a `Stream()` instance.
+
 
     Parameters
     ----------
@@ -316,6 +349,7 @@ def dump(collection, f, **stream_args):
     """
     Dump a collection of JSON objects into a file.
 
+
     Parameters
     ----------
     collection : iterable
@@ -335,6 +369,7 @@ def dumps(collection, **stream_args):
 
     """
     Dump a collection of JSON objects into a string.
+
 
     Parameters
     ----------
