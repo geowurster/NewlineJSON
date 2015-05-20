@@ -27,7 +27,7 @@ Example:
 from .core import *
 
 
-__version__ = '0.3'
+__version__ = '0.3.1'
 __author__ = 'Kevin Wurster'
 __email__ = 'wursterk@gmail.com'
 __source__ = 'https://github.com/geowurster/NewlineJSON'
