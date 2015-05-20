@@ -212,6 +212,21 @@ def test_declare_json_lib():
         assert src.json_lib == jlib
 
 
+def test_write():
+    expected = {'line': 'val'}
+    with tempfile.NamedTemporaryFile(mode='r+') as f:
+        with nlj.open(f.name, 'w') as dst:
+            dst.write(expected)
+        f.seek(0)
+        with nlj.open(f.name) as src:
+            assert next(src) == expected
+
+
+def test_stream_bad_io_mode():
+    with assert_raises(ValueError):
+        nlj.core.Stream(tempfile.TemporaryFile(), mode='bad_mode')
+
+
 # if ujson is not None:
 #     def test_round_robin_with_ujson():
 #         nlj.core.JSON_LIB = ujson

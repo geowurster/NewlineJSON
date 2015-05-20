@@ -54,7 +54,7 @@ def open(path, mode='r', open_args=None, **stream_args):
         open_args = {}
 
     if isinstance(path, string_types):
-        input_stream = builtin_open(path, **open_args)
+        input_stream = builtin_open(path, mode=mode, **open_args)
     elif hasattr(path, '__iter__'):
         input_stream = path
     else:
