@@ -245,11 +245,11 @@ class Stream(object):
         while line is None:
             try:
                 line = self.json_lib.loads(next(self._stream))
-            except StopIteration as e:
-                raise e
-            except Exception as e:
+            except StopIteration:
+                raise
+            except Exception:
                 if not self.skip_failures:
-                    raise e
+                    raise
 
         return line
 
@@ -286,9 +286,9 @@ class Stream(object):
             if PY2:  # pragma no cover
                 encoded = encoded.decode('utf-8')
             return self._stream.write(encoded + self._linesep)
-        except Exception as e:
+        except Exception:
             if not self.skip_failures:
-                raise e
+                raise
 
     def close(self):
 
