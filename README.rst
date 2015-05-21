@@ -109,6 +109,6 @@ Install:
     $ cd NewlineJSON
     $ virtualenv venv
     $ source venv/bin/activate
-    $ pip install -r requirements-dev.txt -e .
-    $ nosetests --with-coverage
+    $ pip install -e .[test]
+    $ py.test tests --cov newlinejson --cov-report term-missing
     $ pep8 --max-line-length=95 newlinejson

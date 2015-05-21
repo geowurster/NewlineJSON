@@ -7,10 +7,7 @@ Setup script for NewlineJSON
 
 
 import os
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup
 
 
 with open('README.rst') as f:
@@ -52,6 +49,9 @@ setup(
         'Programming Language :: Python :: 3.4',
     ],
     description="Streaming newline delimited JSON I/O with transparent compression",
+    extras_require={
+        'test': ['pytest', 'pytest-cov']
+    },
     include_package_data=True,
     keywords='streaming newline delimited json',
     license=license,

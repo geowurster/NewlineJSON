@@ -8,13 +8,10 @@ python:
   - "pypy3"
 
 install:
-  - pip install nose
-  - pip install coverage
-  - pip install coveralls
-  - pip install .
+  - pip install -e .[test]
 
 script:
-  - nosetests --with-coverage
+  - py.test tests --cov newlinejson --cov-report term-missing
 
 after_success:
   - coveralls
