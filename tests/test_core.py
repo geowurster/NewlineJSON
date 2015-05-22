@@ -5,6 +5,7 @@ Unittests for newlinejson.core
 
 import json
 import itertools
+import os
 import tempfile
 
 import pytest
@@ -221,3 +222,23 @@ def test_write():
 def test_stream_bad_io_mode():
     with pytest.raises(ValueError):
         nlj.core.Stream(tempfile.TemporaryFile(), mode='bad_mode')
+
+
+def test_read_num_failures():
+    with tempfile.NamedTemporaryFile(mode='r+') as f:
+        f.write('{' + os.linesep + ']')
+        f.seek(0)
+        with nlj.open(f.name, skip_failures=True) as src:
+            assert src.num_failures is 0
+            for row in src:
+                pass
+            assert src.num_failures is 2
+
+
+def test_write_num_failures():
+    with tempfile.NamedTemporaryFile(mode='r+') as f, \
+            nlj.open(f.name, 'w', skip_failures=True) as src:
+        assert src.num_failures is 0
+        src.write(json)
+        src.write(src)
+        assert src.num_failures is 2

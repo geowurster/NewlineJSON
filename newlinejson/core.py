@@ -152,6 +152,7 @@ class Stream(object):
         self._kwargs = stream_args
         self._is_closed = False
         self._linesep = linesep
+        self._num_failures = 0
         for i in range(skip_lines):
             self.next()
 
@@ -164,10 +165,23 @@ class Stream(object):
         )
 
     @property
+    def num_failures(self):
+
+        """
+        The number of lines that could not be read or written.
+
+        Returns
+        -------
+        int
+        """
+
+        return self._num_failures
+
+    @property
     def mode(self):
 
         """
-        Returns the mode `Stream()` was instantiated with.
+        The mode `Stream()` was instantiated with.
 
         Returns
         -------
@@ -181,7 +195,7 @@ class Stream(object):
     def stream(self):
 
         """
-        Returns a handle to the underlying file-like object.
+        A handle to the underlying file-like object.
 
         Returns
         -------
@@ -248,6 +262,7 @@ class Stream(object):
             except StopIteration:
                 raise
             except Exception:
+                self._num_failures += 1
                 if not self.skip_failures:
                     raise
 
@@ -287,6 +302,7 @@ class Stream(object):
                 encoded = encoded.decode('utf-8')
             return self._stream.write(encoded + self._linesep)
         except Exception:
+            self._num_failures += 1
             if not self.skip_failures:
                 raise
 
