@@ -6,7 +6,6 @@ Setup script for NewlineJSON
 """
 
 
-from codecs import open
 import os
 import sys
 
@@ -35,7 +34,7 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 
-with open('README.rst', encoding='UTF-8') as f:
+with open('README.rst') as f:
     readme = f.read().strip()
 
 
