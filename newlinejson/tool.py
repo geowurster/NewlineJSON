@@ -1,21 +1,19 @@
 """
-Common conversion utilities and a commandline interface.
+Common conversion utilities.
 """
 
 
-import code
 import csv
 import itertools
 from itertools import chain
 import json
-import os
-import sys
 
 import click
 
+from ._cli import cli
 import newlinejson as nlj
-from .pycompat import PY2
-from .pycompat import string_types
+from newlinejson.pycompat import PY2
+from newlinejson.pycompat import string_types
 
 
 if PY2:
@@ -38,18 +36,7 @@ def _dump2csv(val):
         return json.dumps(val)
 
 
-@click.group()
-@click.version_option(nlj.__version__)
-def _cli():
-
-    """
-    NewlineJSON commandline interface.
-
-    Common simple ETL commands for homogeneous data.
-    """
-
-
-@_cli.command()
+@cli.command()
 @click.argument('infile', type=click.File('r'), default='-')
 @click.argument('outfile', type=click.File('w'), default='-')
 def csv2nlj(infile, outfile):
@@ -79,7 +66,7 @@ def csv2nlj(infile, outfile):
             dst.write(out)
 
 
-@_cli.command()
+@cli.command()
 @click.argument(
     'infile', default='-'
 )
@@ -122,36 +109,3 @@ def nlj2csv(infile, outfile, header, skip_failures):
                 record = {k: _dump2csv(v) for k, v in record.items()}
 
             writer.writerow(record)
-
-
-@_cli.command()
-@click.argument('infile', type=click.File('r'), default='-')
-@click.option(
-    '--ipython', 'interpreter', flag_value='ipython',
-    help="Use IPython as the interpreter."
-)
-def insp(infile, interpreter):  # A good idea borrowed from Rasterio and Fiona
-
-    """
-    Open a file and launch a Python interpreter.
-    """
-
-    banner = os.linesep.join([
-        "NewlineJSON {nljv} Interactive Inspector (Python {pyv}).".format(
-            nljv=nlj.__version__, pyv='.'.join(map(str, sys.version_info[:3]))),
-        "Type 'help(src)' or 'next(src)' for more information."])
-
-    with nlj.open(infile) as src:
-        scope = {'src': src}
-        if not interpreter:
-            code.interact(banner, local=scope)
-        elif interpreter == 'ipython':
-            import IPython
-            IPython.InteractiveShell.banner1 = banner
-            IPython.start_ipython(argv=[], user_ns=scope)
-        else:
-            raise click.ClickException('Interpreter {} is unsupported'.format(interpreter))
-
-
-if __name__ == '__main__':
-    _cli()

@@ -3,7 +3,11 @@ Enable the CLI interface with `python -m newlinejson`.
 """
 
 
-from . import tool
+from ._cli import cli
+
+# Import addional commands into the same namespace
+from .tool import csv2nlj
+from .tool import nlj2csv
 
 
-tool._cli()
+cli(prog_name='newlinejson')
