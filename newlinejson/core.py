@@ -4,8 +4,10 @@ Core components for NewlineJSON
 
 
 import json
-import os
 from io import StringIO
+import os
+import sys
+
 
 from .pycompat import string_types
 from .pycompat import PY2
@@ -50,15 +52,19 @@ def open(path, mode='r', open_args=None, **stream_args):
     Stream
     """
 
-    if open_args is None:
-        open_args = {}
+    open_args = open_args or {}
 
-    if isinstance(path, string_types):
+    if path == '-' and 'r' in mode:
+        input_stream = sys.stdin
+    elif path == '-' and 'r' not in mode:
+        input_stream = sys.stdout
+    elif isinstance(path, string_types):
         input_stream = builtin_open(path, mode=mode, **open_args)
     elif hasattr(path, '__iter__'):
         input_stream = path
     else:
-        raise TypeError("Path must be a filepath or an iterable file-like object.")
+        raise TypeError("Path must be a filepath, iterable, file-like object, or '-' "
+                        "for stdin/stdout.")
 
     return Stream(input_stream, mode=mode, **stream_args)
 

@@ -6,16 +6,37 @@ Setup script for NewlineJSON
 """
 
 
+from codecs import open
 import os
+import sys
+
+from setuptools import find_packages
 from setuptools import setup
+from setuptools.command.test import test as TestCommand
 
 
-with open('README.rst') as f:
+# https://pytest.org/latest/goodpractises.html
+class PyTest(TestCommand):
+    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.pytest_args = []
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        #import here, cause outside the eggs aren't loaded
+        import pytest
+        errno = pytest.main(self.pytest_args)
+        sys.exit(errno)
+
+
+with open('README.rst', encoding='UTF-8') as f:
     readme = f.read().strip()
-
-
-with open('LICENSE.txt') as f:
-    license = f.read().strip()
 
 
 version = None
@@ -37,6 +58,7 @@ with open(os.path.join('newlinejson', '__init__.py')) as f:
 
 
 setup(
+    name='NewlineJSON',
     author=author,
     author_email=email,
     classifiers=[
@@ -50,14 +72,17 @@ setup(
     ],
     description="Streaming newline delimited JSON I/O with transparent compression",
     extras_require={
-        'test': ['pytest', 'pytest-cov']
+        'test': [
+            'pytest',
+            'pytest-cov'
+        ],
+        'cli': ['click>=3.0']
     },
     include_package_data=True,
     keywords='streaming newline delimited json',
     license=license,
     long_description=readme,
-    name='NewlineJSON',
-    packages=['newlinejson'],
+    packages=find_packages(),
     url=source,
     version=version,
     zip_safe=True
