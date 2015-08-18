@@ -7,17 +7,19 @@ Unittests for deprecated components of newlinejson
 
 from __future__ import unicode_literals
 
-from imp import reload
+try:
+    from importlib import reload
+except ImportError:
+    from imp import reload
+from io import StringIO
 import json
 import os
-
 import unittest
 import warnings
 
-from io import StringIO
+import six
 
 import newlinejson
-import newlinejson.pycompat
 
 
 warnings.filterwarnings("ignore")
@@ -41,7 +43,7 @@ SAMPLE_FILE_CONTENTS = {
 
 
 # StringIO in Python 2 requires unicode
-if newlinejson.pycompat.PY2:  # pragma no cover
+if six.PY2:  # pragma no cover
     SAMPLE_FILE_CONTENTS = {unicode(k): unicode(v) for k, v in SAMPLE_FILE_CONTENTS.items()}
 
 

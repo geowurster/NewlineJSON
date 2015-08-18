@@ -3,23 +3,18 @@ Core components for NewlineJSON
 """
 
 
+import codecs
 import json
 from io import StringIO
 import os
+import six
 import sys
 
-
-from .pycompat import string_types
-from .pycompat import PY2
-from .deprecated import Reader
-from .deprecated import Writer
+from newlinejson.deprecated import Reader
+from newlinejson.deprecated import Writer
 
 
-__all__ = ['open', 'Stream', 'load', 'loads', 'dump', 'dumps', 'Reader', 'Writer']
-
-
-# Need this inside the new open function
-builtin_open = open
+__all__ = ['open', 'NLJStream', 'load', 'loads', 'dump', 'dumps', 'Reader', 'Writer']
 
 
 JSON_LIB = json
@@ -54,22 +49,22 @@ def open(path, mode='r', open_args=None, **stream_args):
 
     open_args = open_args or {}
 
-    if path == '-' and 'r' in mode:
+    if path == '-' and mode == 'r':
         input_stream = sys.stdin
-    elif path == '-' and 'r' not in mode:
+    elif path == '-' and mode in ('w', 'a'):
         input_stream = sys.stdout
-    elif isinstance(path, string_types):
-        input_stream = builtin_open(path, mode=mode, **open_args)
+    elif isinstance(path, six.string_types):
+        input_stream = codecs.open(path, mode=mode, **open_args)
     elif hasattr(path, '__iter__'):
         input_stream = path
     else:
-        raise TypeError("Path must be a filepath, iterable, file-like object, or '-' "
-                        "for stdin/stdout.")
+        raise TypeError(
+            "Path must be a filepath, iterable, file-like object, or '-' for stdin/stdout.")
 
-    return Stream(input_stream, mode=mode, **stream_args)
+    return NLJStream(input_stream, mode=mode, **stream_args)
 
 
-class Stream(object):
+class NLJStream(object):
 
     """
     Perform I/O operations on a stream of newline delimited JSON.
@@ -141,10 +136,7 @@ class Stream(object):
 
         global JSON_LIB
 
-        if json_lib is None:
-            self.json_lib = JSON_LIB
-        else:
-            self.json_lib = json_lib
+        self.json_lib = json_lib or JSON_LIB
 
         if mode not in self.io_modes:
             raise ValueError("Mode `%s' is unrecognized: %s"
@@ -239,7 +231,7 @@ class Stream(object):
 
         return self
 
-    def next(self):
+    def __next__(self):
 
         """
         Read a line from the underlying file-like object and convert it to JSON.
@@ -274,7 +266,7 @@ class Stream(object):
 
         return line
 
-    __next__ = next
+    next = __next__
 
     def write(self, obj):
 
@@ -304,7 +296,7 @@ class Stream(object):
 
         try:
             encoded = self.json_lib.dumps(obj, **self._kwargs)
-            if PY2:  # pragma no cover
+            if six.PY2:  # pragma no cover
                 encoded = encoded.decode('utf-8')
             return self._stream.write(encoded + self._linesep)
         except Exception:
@@ -342,7 +334,7 @@ def load(f, **stream_args):
         Additional keyword arguments for `Stream()`.
     """
 
-    return Stream(f, **stream_args)
+    return NLJStream(f, **stream_args)
 
 
 def loads(string, **stream_args):
@@ -359,10 +351,10 @@ def loads(string, **stream_args):
         Additional keyword arguments for `Stream()`.
     """
 
-    if PY2:  # pragma no cover
+    if six.PY2:  # pragma no cover
         string = string.decode('utf-8')
 
-    return Stream(StringIO(string), **stream_args)
+    return NLJStream(StringIO(string), **stream_args)
 
 
 def dump(collection, f, **stream_args):
@@ -381,7 +373,7 @@ def dump(collection, f, **stream_args):
         Additional keyword arguments for `Stream()`.
     """
 
-    dst = Stream(f, 'w', **stream_args)
+    dst = NLJStream(f, 'w', **stream_args)
     for item in collection:
         dst.write(item)
 
@@ -405,7 +397,7 @@ def dumps(collection, **stream_args):
     """
 
     with StringIO() as f:
-        dst = Stream(f, 'w', **stream_args)
+        dst = NLJStream(f, 'w', **stream_args)
         for item in collection:
             dst.write(item)
         f.seek(0)

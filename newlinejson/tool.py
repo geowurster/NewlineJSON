@@ -8,10 +8,10 @@ from itertools import chain
 import json
 
 import click
+import six
 
 from newlinejson._cli import main
 import newlinejson as nlj
-from newlinejson.pycompat import string_types
 
 
 def _nlj_rec_to_csv_rec(val):
@@ -22,7 +22,7 @@ def _nlj_rec_to_csv_rec(val):
     turning into JSON `null`'s.
     """
 
-    if isinstance(val, string_types):
+    if isinstance(val, six.string_types):
         return val
     elif val is None:
         return ""
@@ -49,7 +49,7 @@ def csv2nlj(infile, outfile):
 
             out = {}
             for k, v in record.items():
-                if isinstance(v, string_types) and len(v) == 0:
+                if isinstance(v, six.string_types) and len(v) == 0:
                     out[k] = None
                 else:
                     try:

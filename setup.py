@@ -29,7 +29,7 @@ class PyTest(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
-        #import here, cause outside the eggs aren't loaded
+        # import here, cause outside the eggs aren't loaded
         import pytest
         errno = pytest.main(self.pytest_args)
         sys.exit(errno)
@@ -83,10 +83,13 @@ setup(
     description="Streaming newline delimited JSON I/O with transparent compression",
     extras_require=extras_require,
     include_package_data=True,
+    install_requires=[
+        'six'
+    ],
     keywords='streaming newline delimited json',
     license="New BSD",
     long_description=readme,
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests']),
     url=source,
     version=version,
     zip_safe=True
