@@ -5,7 +5,12 @@ Unittests for deprecated components of newlinejson
 """
 
 
-from importlib import reload
+from __future__ import unicode_literals
+
+try:
+    from importlib import reload
+except ImportError:
+    from imp import reload
 from io import StringIO
 import json
 import os
