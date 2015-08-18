@@ -86,7 +86,7 @@ setup(
     keywords='streaming newline delimited json',
     license="New BSD",
     long_description=readme,
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests']),
     url=source,
     version=version,
     zip_safe=True
