@@ -1,7 +1,7 @@
 """
 Streaming newline delimited JSON I/O.
 
-Calling ``newlinejson.open()`` returns a loaded instance of ``NewlineJSONStream()``,
+Calling ``newlinejson.open()`` returns a loaded instance of ``NLJStream()``,
 which generally acts like a file-like object.  See ``help(newlinejson.Stream)``
 for more information.
 
@@ -28,7 +28,7 @@ from newlinejson.core import dump
 from newlinejson.core import dumps
 from newlinejson.core import load
 from newlinejson.core import loads
-from newlinejson.core import NewlineJSONStream
+from newlinejson.core import NLJStream
 from newlinejson.core import open
 
 from newlinejson.deprecated import Reader

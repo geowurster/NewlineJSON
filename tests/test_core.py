@@ -73,8 +73,8 @@ def test_loads():
 
         actual = nlj.loads(f.read())
 
-        assert isinstance(expected, nlj.NewlineJSONStream) \
-               and isinstance(actual, nlj.NewlineJSONStream)
+        assert isinstance(expected, nlj.NLJStream) \
+               and isinstance(actual, nlj.NLJStream)
 
         for attr in ('json_lib', 'skip_failures', 'mode', 'closed'):
             assert getattr(expected, attr) == getattr(actual, attr), attr
@@ -133,7 +133,7 @@ def test_skiplines():
             nlj.open(data.MIXED_JSON_PATH, skip_lines=sl) as actual:
         for i in range(sl):
             next(f)
-        compare_iterables(nlj.NewlineJSONStream(f), actual)
+        compare_iterables(nlj.NLJStream(f), actual)
 
 
 def test_attributes():
@@ -222,7 +222,7 @@ def test_write():
 
 def test_stream_bad_io_mode():
     with pytest.raises(ValueError):
-        nlj.core.NewlineJSONStream(tempfile.TemporaryFile(), mode='bad_mode')
+        nlj.core.NLJStream(tempfile.TemporaryFile(), mode='bad_mode')
 
 
 def test_read_num_failures():

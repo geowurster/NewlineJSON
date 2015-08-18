@@ -14,7 +14,7 @@ from newlinejson.deprecated import Reader
 from newlinejson.deprecated import Writer
 
 
-__all__ = ['open', 'NewlineJSONStream', 'load', 'loads', 'dump', 'dumps', 'Reader', 'Writer']
+__all__ = ['open', 'NLJStream', 'load', 'loads', 'dump', 'dumps', 'Reader', 'Writer']
 
 
 JSON_LIB = json
@@ -61,10 +61,10 @@ def open(path, mode='r', open_args=None, **stream_args):
         raise TypeError(
             "Path must be a filepath, iterable, file-like object, or '-' for stdin/stdout.")
 
-    return NewlineJSONStream(input_stream, mode=mode, **stream_args)
+    return NLJStream(input_stream, mode=mode, **stream_args)
 
 
-class NewlineJSONStream(object):
+class NLJStream(object):
 
     """
     Perform I/O operations on a stream of newline delimited JSON.
@@ -334,7 +334,7 @@ def load(f, **stream_args):
         Additional keyword arguments for `Stream()`.
     """
 
-    return NewlineJSONStream(f, **stream_args)
+    return NLJStream(f, **stream_args)
 
 
 def loads(string, **stream_args):
@@ -354,7 +354,7 @@ def loads(string, **stream_args):
     if six.PY2:  # pragma no cover
         string = string.decode('utf-8')
 
-    return NewlineJSONStream(StringIO(string), **stream_args)
+    return NLJStream(StringIO(string), **stream_args)
 
 
 def dump(collection, f, **stream_args):
@@ -373,7 +373,7 @@ def dump(collection, f, **stream_args):
         Additional keyword arguments for `Stream()`.
     """
 
-    dst = NewlineJSONStream(f, 'w', **stream_args)
+    dst = NLJStream(f, 'w', **stream_args)
     for item in collection:
         dst.write(item)
 
@@ -397,7 +397,7 @@ def dumps(collection, **stream_args):
     """
 
     with StringIO() as f:
-        dst = NewlineJSONStream(f, 'w', **stream_args)
+        dst = NLJStream(f, 'w', **stream_args)
         for item in collection:
             dst.write(item)
         f.seek(0)
