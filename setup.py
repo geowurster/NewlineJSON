@@ -6,6 +6,7 @@ Setup script for NewlineJSON
 """
 
 
+from itertools import chain
 import os
 import sys
 
@@ -56,6 +57,16 @@ with open(os.path.join('newlinejson', '__init__.py')) as f:
             break
 
 
+extras_require = {
+    'dev': [
+        'pytest',
+        'pytest-cov'
+    ],
+    'cli': ['click>=3.0']
+}
+extras_require.update(all=list(chain(extras_require.values())))
+
+
 setup(
     name='NewlineJSON',
     author=author,
@@ -70,16 +81,10 @@ setup(
         'Programming Language :: Python :: 3.4',
     ],
     description="Streaming newline delimited JSON I/O with transparent compression",
-    extras_require={
-        'test': [
-            'pytest',
-            'pytest-cov'
-        ],
-        'cli': ['click>=3.0']
-    },
+    extras_require=extras_require,
     include_package_data=True,
     keywords='streaming newline delimited json',
-    license=license,
+    license="New BSD",
     long_description=readme,
     packages=find_packages(),
     url=source,
