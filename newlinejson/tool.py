@@ -4,23 +4,17 @@ Common conversion utilities.
 
 
 import csv
-import itertools
 from itertools import chain
 import json
 
 import click
 
-from ._cli import cli
+from newlinejson._cli import main
 import newlinejson as nlj
-from newlinejson.pycompat import PY2
 from newlinejson.pycompat import string_types
 
 
-if PY2:
-    map = itertools.imap
-
-
-def _dump2csv(val):
+def _nlj_rec_to_csv_rec(val):
 
     """
     A more specific `json.dumps()` that only serializes non-string objects to
@@ -36,7 +30,7 @@ def _dump2csv(val):
         return json.dumps(val)
 
 
-@cli.command()
+@main.command()
 @click.argument('infile', type=click.File('r'), default='-')
 @click.argument('outfile', type=click.File('w'), default='-')
 def csv2nlj(infile, outfile):
@@ -66,21 +60,16 @@ def csv2nlj(infile, outfile):
             dst.write(out)
 
 
-@cli.command()
-@click.argument(
-    'infile', default='-'
-)
-@click.argument(
-    'outfile', type=click.File('w'), default='-',
+@main.command()
+@click.argument('infile', type=click.File('r'), default='-')
+@click.argument('outfile', type=click.File('w'), default='-')
+@click.option(
+    '--header / --no-header', default=True, show_default=True,
+    help="Specify whether the header should be written to the output CSV."
 )
 @click.option(
-    '--header / --no-header', default=True,
-    help="Specify whether the header should be written to the output CSV or not. "
-         "(default: True)"
-)
-@click.option(
-    '--skip-failures / --no-skip-failures', default=False,
-    help="Skip records that cannot be converted. (default: False)"
+    '--skip-failures / --no-skip-failures', default=False, show_default=True,
+    help="Skip records that cannot be converted."
 )
 def nlj2csv(infile, outfile, header, skip_failures):
 
@@ -104,8 +93,10 @@ def nlj2csv(infile, outfile, header, skip_failures):
         for record in chain([first], src):
 
             if skip_failures:
-                record = {fld: _dump2csv(record.get(fld)) for fld in writer.fieldnames}
+                record = {
+                    fld: _nlj_rec_to_csv_rec(record.get(fld)) for fld in writer.fieldnames}
             else:
-                record = {k: _dump2csv(v) for k, v in record.items()}
+                record = {
+                    k: _nlj_rec_to_csv_rec(v) for k, v in record.items()}
 
             writer.writerow(record)

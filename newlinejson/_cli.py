@@ -16,7 +16,7 @@ import newlinejson as nlj
 
 @click.group()
 @click.version_option(nlj.__version__)
-def cli():
+def main():
 
     """
     NewlineJSON commandline interface.
@@ -25,7 +25,7 @@ def cli():
     """
 
 
-@cli.command()
+@main.command()
 @click.argument('infile', type=click.File('r'), default='-')
 @click.option(
     '--ipython', 'interpreter', flag_value='ipython',
