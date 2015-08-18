@@ -36,6 +36,34 @@ more information.
     {'field2': 'l5f2', 'field3': 'l5f3', 'field1': 'l5f1'}
 
 
+Command Line Interface
+======================
+
+Rather than provide another utility, the CLI is accessed from ``python -m newlinejson``:
+
+.. code-block:: console
+
+    $ python -m newlinejson --help
+    Usage: newlinejson [OPTIONS] COMMAND [ARGS]...
+
+      NewlineJSON commandline interface.
+
+      Common simple ETL commands for homogeneous data.
+
+    Options:
+      --version  Show the version and exit.
+      --help     Show this message and exit.
+
+    Commands:
+      csv2nlj  Convert a CSV to newline JSON dictionaries.
+      insp     Open a file and launch a Python interpreter.
+      nlj2csv  Convert newline JSON dictionaries to a CSV.
+
+The included utilities are for working with homogeneous data, meaning that every
+line has the same fields.  The goal is to provide simple data translation tools
+rather than a more comprehensive suite.
+
+
 Can't I do everything this module does with one function?
 =========================================================
 
