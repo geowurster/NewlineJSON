@@ -31,6 +31,9 @@ from newlinejson.core import loads
 from newlinejson.core import NewlineJSONStream
 from newlinejson.core import open
 
+from newlinejson.deprecated import Reader
+from newlinejson.deprecated import Writer
+
 
 __version__ = '0.4'
 __author__ = 'Kevin Wurster'

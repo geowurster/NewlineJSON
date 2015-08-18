@@ -9,8 +9,8 @@ import os
 import tempfile
 
 import pytest
+import six
 
-import newlinejson.pycompat
 import newlinejson as nlj
 from . import data
 
@@ -73,7 +73,8 @@ def test_loads():
 
         actual = nlj.loads(f.read())
 
-        assert isinstance(expected, nlj.Stream) and isinstance(actual, nlj.Stream)
+        assert isinstance(expected, nlj.NewlineJSONStream) \
+               and isinstance(actual, nlj.NewlineJSONStream)
 
         for attr in ('json_lib', 'skip_failures', 'mode', 'closed'):
             assert getattr(expected, attr) == getattr(actual, attr), attr
@@ -104,7 +105,7 @@ def test_dumps():
         actual = nlj.dumps(src)
 
     for obj in (expected, actual):
-        assert isinstance(obj, nlj.pycompat.string_types)
+        assert isinstance(obj, six.string_types)
 
     compare_iterables(nlj.loads(expected), nlj.loads(actual))
 
@@ -132,7 +133,7 @@ def test_skiplines():
             nlj.open(data.MIXED_JSON_PATH, skip_lines=sl) as actual:
         for i in range(sl):
             next(f)
-        compare_iterables(nlj.Stream(f), actual)
+        compare_iterables(nlj.NewlineJSONStream(f), actual)
 
 
 def test_attributes():
@@ -143,7 +144,7 @@ def test_attributes():
 
     # __repr__
     with nlj.open(data.DICTS_JSON_PATH) as src:
-        assert isinstance(repr(src), nlj.pycompat.string_types)
+        assert isinstance(repr(src), six.string_types)
         assert 'open' in repr(src) and 'Stream' in repr(src) and src.mode in repr(src)
     assert 'closed' in repr(src) and 'Stream' in repr(src) and src.mode in repr(src)
 
@@ -221,7 +222,7 @@ def test_write():
 
 def test_stream_bad_io_mode():
     with pytest.raises(ValueError):
-        nlj.core.Stream(tempfile.TemporaryFile(), mode='bad_mode')
+        nlj.core.NewlineJSONStream(tempfile.TemporaryFile(), mode='bad_mode')
 
 
 def test_read_num_failures():

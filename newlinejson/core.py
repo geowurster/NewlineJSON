@@ -49,11 +49,11 @@ def open(path, mode='r', open_args=None, **stream_args):
 
     open_args = open_args or {}
 
-    if path == '-' and 'r' in mode:
+    if path == '-' and mode == 'r':
         input_stream = sys.stdin
-    elif path == '-' and 'r' not in mode:
+    elif path == '-' and mode in ('w', 'a'):
         input_stream = sys.stdout
-    elif isinstance(path, string_types):
+    elif isinstance(path, six.string_types):
         input_stream = codecs.open(path, mode=mode, **open_args)
     elif hasattr(path, '__iter__'):
         input_stream = path
