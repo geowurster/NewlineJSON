@@ -7,10 +7,9 @@ import codecs
 import json
 from io import StringIO
 import os
+import six
 import sys
 
-from newlinejson.pycompat import string_types
-from newlinejson.pycompat import PY2
 from newlinejson.deprecated import Reader
 from newlinejson.deprecated import Writer
 
@@ -297,7 +296,7 @@ class NewlineJSONStream(object):
 
         try:
             encoded = self.json_lib.dumps(obj, **self._kwargs)
-            if PY2:  # pragma no cover
+            if six.PY2:  # pragma no cover
                 encoded = encoded.decode('utf-8')
             return self._stream.write(encoded + self._linesep)
         except Exception:
@@ -352,7 +351,7 @@ def loads(string, **stream_args):
         Additional keyword arguments for `Stream()`.
     """
 
-    if PY2:  # pragma no cover
+    if six.PY2:  # pragma no cover
         string = string.decode('utf-8')
 
     return NewlineJSONStream(StringIO(string), **stream_args)
