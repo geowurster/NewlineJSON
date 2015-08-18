@@ -1,7 +1,7 @@
 """
 Streaming newline delimited JSON I/O.
 
-Calling ``newlinejson.open()`` returns a loaded instance of ``newlinejson.Stream()``,
+Calling ``newlinejson.open()`` returns a loaded instance of ``NewlineJSONStream()``,
 which generally acts like a file-like object.  See ``help(newlinejson.Stream)``
 for more information.
 
@@ -24,17 +24,22 @@ Example:
 """
 
 
-from .core import *
+from newlinejson.core import dump
+from newlinejson.core import dumps
+from newlinejson.core import load
+from newlinejson.core import loads
+from newlinejson.core import NewlineJSONStream
+from newlinejson.core import open
 
 
-__version__ = '0.3.2'
+__version__ = '0.4'
 __author__ = 'Kevin Wurster'
 __email__ = 'wursterk@gmail.com'
 __source__ = 'https://github.com/geowurster/NewlineJSON'
 __license__ = '''
 New BSD License
 
-Copyright (c) 2014 - 2015, Kevin D. Wurster
+Copyright (c) 2014, Kevin D. Wurster
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -47,8 +52,9 @@ modification, are permitted provided that the following conditions are met:
   this list of conditions and the following disclaimer in the documentation
   and/or other materials provided with the distribution.
 
-* The names of its contributors may not be used to endorse or promote products
-  derived from this software without specific prior written permission.
+* The names of NewlineJSON its contributors may not be used to endorse or
+  promote products derived from this software without specific prior written
+  permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
