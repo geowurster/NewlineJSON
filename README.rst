@@ -14,8 +14,8 @@ Streaming newline delimited JSON I/O.
 Example
 =======
 
-Calling ``newlinejson.open()`` returns a loaded instance of ``newlinejson.Stream()``,
-which generally acts like a file-like object.  See ``help(newlinejson.Stream)`` for
+Calling ``newlinejson.open()`` returns a loaded instance of ``newlinejson.NLJStream()``,
+which generally acts like a file-like object.  See ``help(newlinejson.NLJStream)`` for
 more information.
 
 .. code-block:: python
