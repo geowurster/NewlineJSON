@@ -11,28 +11,28 @@ import newlinejson as nlj
 from newlinejson import tool
 
 
-def test_csv2nlj(tmpdir):
+def test_csv2nlj(tmpdir, dicts_csv_path, dicts_path):
     outfile = str(tmpdir.mkdir('test').join('out.json'))
 
     result = CliRunner().invoke(tool.csv2nlj, [
-        'sample-data/dictionaries.csv',
+        dicts_csv_path,
         outfile
     ])
     assert result.exit_code == 0
-    with nlj.open('sample-data/dictionaries.json') as expected,\
+    with nlj.open(dicts_path) as expected,\
             nlj.open(outfile) as actual:
         for e, a in zip(expected, actual):
             assert e == a
 
 
-def test_nlj2csv(tmpdir):
+def test_nlj2csv(tmpdir, dicts_path):
     outfile = str(tmpdir.mkdir('test').join('out.json'))
 
     result = CliRunner().invoke(tool.nlj2csv, [
-        'sample-data/dictionaries.json',
+        dicts_path,
         outfile
     ])
     assert result.exit_code == 0
-    with nlj.open('sample-data/dictionaries.json') as expected, open(outfile) as actual:
+    with nlj.open(dicts_path) as expected, open(outfile) as actual:
         for e, a in zip(expected, csv.DictReader(actual)):
             assert e == a
