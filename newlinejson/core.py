@@ -10,9 +10,6 @@ import os
 import six
 import sys
 
-from newlinejson.deprecated import Reader
-from newlinejson.deprecated import Writer
-
 
 __all__ = ['open', 'NLJStream', 'load', 'loads', 'dump', 'dumps', 'Reader', 'Writer']
 
