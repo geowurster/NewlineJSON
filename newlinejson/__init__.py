@@ -24,7 +24,7 @@ Example:
 """
 
 
-from newlinejson.core import dump, dumps, load, loads, NLJStream, open
+from newlinejson.core import dump, dumps, load, loads, NLJStream, open, NLJReader, NLJWriter
 
 
 __version__ = '0.4'

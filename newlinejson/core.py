@@ -11,7 +11,7 @@ import six
 import sys
 
 
-__all__ = ['open', 'NLJStream', 'load', 'loads', 'dump', 'dumps', 'Reader', 'Writer']
+__all__ = ['open', 'NLJStream', 'load', 'loads', 'dump', 'dumps', 'NLJReader', 'NLJWriter']
 
 
 JSON_LIB = json
@@ -49,24 +49,31 @@ def open(name, mode='r', open_args=None, **kwargs):
     elif isinstance(name, six.string_types):
         open_args.update(mode=mode)
         stream = codecs.open(name, **open_args)
-    elif hasattr(name, 'close') and (hasattr(name, '__next__') or hasattr(name, 'next')):
+    elif hasattr(name, 'close') or (hasattr(name, '__next__') or hasattr(name, 'next')):
         stream = name
     else:
         raise TypeError(
-            "Path must be a filepath, file-like object, or '-' for stdin/stdout.")
+            "Path must be a filepath, file-like object with .close or .__next__/next, "
+            "or '-' for stdin/stdout.")
 
-    return NLJStream(stream, mode=mode, **kwargs)
+    if mode == 'r':
+        return NLJReader(stream, mode=mode, **kwargs)
+    elif mode in ('w', 'a'):
+        return NLJWriter(stream, mode=mode, **kwargs)
+    else:
+        raise ValueError("Invalid mode: {}".format(mode))
 
 
 class NLJStream(object):
 
     """
-    Perform I/O operations on a stream of newline delimited JSON.
+    Baseclass for performing I/O operations on a stream of newline delimited
+    JSON.  Implements common file-like object properties and methods
     """
 
     io_modes = ('r', 'w', 'a')
 
-    def __init__(self, stream, mode='r', skip_lines=0, skip_failures=False, newline=os.linesep,
+    def __init__(self, stream, mode='r', skip_failures=False, newline=os.linesep,
                  json_lib=None, **json_args):
 
         """
@@ -88,8 +95,6 @@ class NLJStream(object):
             validated.
         mode : str, optional
             I/O mode stream should operate in.  Must be 'r', 'a', or 'w'.
-        skip_lines : int, optional
-            Immediately skip the first N lines of the input file if reading.
         skip_failures : bool, optional
             Don't crash when lines can't be encoded or decoded.
         newline : str, optional
@@ -125,8 +130,6 @@ class NLJStream(object):
             raise ValueError(
                 "Mode '{mode}' is unrecognized - must be one of: {io_modes}".format(
                     mode=mode, io_modes=self.io_modes))
-        if skip_lines < 0:
-            raise ValueError("skip_lines must be > 0")
 
         self.skip_failures = skip_failures
         self._mode = mode
@@ -134,8 +137,6 @@ class NLJStream(object):
         self._json_args = json_args or {}
         self._linesep = newline
         self._num_failures = 0
-        for i in range(skip_lines):
-            next(self)
 
     def __repr__(self):
         return "<{io} {cname} '{name}', mode '{mode}' at {id}>".format(
@@ -177,6 +178,21 @@ class NLJStream(object):
         else:
             return None
 
+    def close(self):
+        """Close the stream and flush to disk."""
+        return self._stream.close()
+    
+    def flush(self):
+        """Flush the buffer to disk."""
+        return self._stream.flush()
+
+
+class NLJReader(NLJStream):
+
+    """
+    Read a stream of newline JSON.
+    """
+
     def __iter__(self):
         """Iterate over lines in the input stream."""
         return self
@@ -189,17 +205,7 @@ class NLJStream(object):
         If skipping failures, then exceptions will be logged rather than
         thrown and each `next()` call will read until it successfully decodes a
         line or until it reaches the end of the file.
-
-        Raises
-        ------
-        OSError
-            If not open for reading.
         """
-
-        if self._mode != 'r':
-            raise OSError("Stream not open for reading")
-        elif self.closed:
-            raise OSError("Can't operate on a closed stream")
 
         line = None
         while line is None:
@@ -216,6 +222,13 @@ class NLJStream(object):
 
     next = __next__
 
+
+class NLJWriter(NLJStream):
+
+    """
+    Write NLJ to a stream.
+    """
+
     def write(self, obj):
 
         """
@@ -226,17 +239,7 @@ class NLJStream(object):
         ----------
         obj : list or dict
             An object to encode as JSON and write.
-
-        Raises
-        ------
-        OSError
-            If not open for writing.
         """
-
-        if self._mode not in ('w', 'a'):
-            raise OSError("Stream not open for writing")
-        elif self.closed:
-            raise OSError("Can't operate on a closed stream")
 
         try:
             encoded = self._json_lib.dumps(obj, **self._json_args)
@@ -248,14 +251,6 @@ class NLJStream(object):
             if not self.skip_failures:
                 raise
 
-    def close(self):
-        """Close the stream and flush to disk."""
-        return self._stream.close()
-    
-    def flush(self):
-        """Flush the buffer to disk."""
-        return self._stream.flush()
-
 
 def load(f, **json_args):
 
@@ -263,23 +258,23 @@ def load(f, **json_args):
     Use `open()` instead.  Provided to match the builtin `json` library's
     functionality.
 
-    Load an open file-like object into `NLJStream()`.
+    Load an open file-like object into `NLJReader()`.
 
     Parameters
     ----------
     f : file
         File-like object open for reading.
     json_args : **json_args, optional
-        Additional keyword arguments for `NLJStream()`.
+        Additional keyword arguments for `NLJReader()`.
     """
 
-    return NLJStream(f, **json_args)
+    return NLJReader(f, **json_args)
 
 
 def loads(string, **json_args):
 
     """
-    Load a string containing newline JSON into a `NLJStream()`.  Provided to
+    Load a string containing newline JSON into a `NLJReader()`.  Provided to
     match the `json` library's functionality.  This may be more appropriate:
 
         >>> map(json.loads, string.splitlines())
@@ -289,13 +284,13 @@ def loads(string, **json_args):
     string : str
         Newline JSON encoded as a string.
     json_args : **json_args, optional
-        Additional keyword arguments for `NLJStream()`.
+        Additional keyword arguments for `NLJReader()`.
     """
 
     if six.PY2:  # pragma no cover
         string = string.decode('utf-8')
 
-    return NLJStream(StringIO(string), **json_args)
+    return NLJReader(StringIO(string), **json_args)
 
 
 def dump(collection, f, **json_args):
@@ -313,10 +308,10 @@ def dump(collection, f, **json_args):
     f : file
         File-like object open for writing.
     json_args : **json_args, optional
-        Additional keyword arguments for `NLJStream()`.
+        Additional keyword arguments for `NLJWriter()`.
     """
 
-    dst = NLJStream(f, 'w', **json_args)
+    dst = NLJWriter(f, 'w', **json_args)
     try:
         for item in collection:
             dst.write(item)
@@ -337,7 +332,7 @@ def dumps(collection, **json_args):
     collection : iter
         Iterable that produces one JSON object per iteration.
     json_args : **json_args, optional
-        Additional keyword arguments for `NLJStream()`.
+        Additional keyword arguments for `NLJWriter()`.
 
     Returns
     -------
@@ -345,7 +340,7 @@ def dumps(collection, **json_args):
     """
 
     with StringIO() as f:
-        with NLJStream(f, 'w', **json_args) as dst:
+        with NLJWriter(f, 'w', **json_args) as dst:
             for item in collection:
                 dst.write(item)
             f.seek(0)
