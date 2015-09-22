@@ -16,7 +16,7 @@ from six.moves import StringIO
 logger = logging.getLogger('newlinejson')
 
 
-__all__ = ['open', 'NLJStream', 'load', 'loads', 'dump', 'dumps', 'NLJReader', 'NLJWriter']
+__all__ = ['open', 'NLJBaseStream', 'load', 'loads', 'dump', 'dumps', 'NLJReader', 'NLJWriter']
 
 
 JSON_LIB = json

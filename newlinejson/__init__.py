@@ -28,10 +28,17 @@ import logging
 
 logger = logging.getLogger('newlinejson')
 
-from newlinejson.core import dump, dumps, load, loads, NLJStream, open, NLJReader, NLJWriter
+from newlinejson.core import dump
+from newlinejson.core import dumps
+from newlinejson.core import load
+from newlinejson.core import loads
+from newlinejson.core import open
+from newlinejson.core import NLJBaseStream
+from newlinejson.core import NLJReader
+from newlinejson.core import NLJWriter
 
 
-__version__ = '0.4'
+__version__ = '1.0'
 __author__ = 'Kevin Wurster'
 __email__ = 'wursterk@gmail.com'
 __source__ = 'https://github.com/geowurster/NewlineJSON'

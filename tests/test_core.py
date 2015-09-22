@@ -137,7 +137,7 @@ def test_write():
 
 def test_stream_bad_io_mode():
     with pytest.raises(ValueError):
-        nlj.core.NLJStream(tempfile.TemporaryFile(), mode='bad_mode')
+        nlj.core.NLJBaseStream(tempfile.TemporaryFile(), mode='bad_mode')
 
 
 def test_read_num_failures():

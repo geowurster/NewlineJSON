@@ -1,6 +1,16 @@
 Changes
 =======
 
+1.0 (2015-09-22)
+----------------
+
+- Split I/O classes into a reader and writer to eliminate some overhead
+- Removed deprecated features - #31
+- Allow `NLJStream(json_lib)` to be a string or module - #30
+- Implement `NLJStream.name` - #29
+- Test against and support Python 2.6 (This may not last long) - #44
+
+
 0.3.2 (2015-05-21)
 ------------------
 
