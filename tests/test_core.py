@@ -13,18 +13,6 @@ import six
 import newlinejson as nlj
 
 
-def compare_iterables(collection1, collection2):
-    for i1, i2 in zip(collection1, collection2):
-        assert i1 == i2, "%s != %s" % (i1, i2)
-    return True
-
-
-def test_compare_iterables():
-    assert compare_iterables('abc', 'abc')
-    with pytest.raises(AssertionError):
-        compare_iterables((1, 2, 3), 'a')
-
-
 def test_standard(dicts_path):
 
     with nlj.open(dicts_path) as actual, \
@@ -34,14 +22,14 @@ def test_standard(dicts_path):
             assert json.loads(e_line) == a_line
 
 
-def test_read_file_obj(dicts_path):
+def test_read_file_obj(dicts_path, compare_iter):
 
     with open(dicts_path) as f, \
             nlj.open(dicts_path) as expected:
-        compare_iterables(expected, nlj.open(f))
+        compare_iter(expected, nlj.open(f))
 
 
-def test_dumps(dicts_path):
+def test_dumps(dicts_path, compare_iter):
 
     with open(dicts_path) as f:
         expected = f.read()
@@ -52,7 +40,7 @@ def test_dumps(dicts_path):
     for obj in (expected, actual):
         assert isinstance(obj, six.string_types)
 
-    compare_iterables(nlj.loads(expected), nlj.loads(actual))
+    compare_iter(nlj.loads(expected), nlj.loads(actual))
 
 
 def test_open_invalid_object():
@@ -71,13 +59,13 @@ def test_negative_skiplines(dicts_path):
         nlj.open(dicts_path, skip_lines=-1)
 
 
-def test_skiplines(dicts_path):
+def test_skiplines(dicts_path, compare_iter):
     sl = 2
     with open(dicts_path) as f, \
             nlj.open(dicts_path, skip_lines=sl) as actual:
         for i in range(sl):
             next(f)
-        compare_iterables(nlj.NLJStream(f), actual)
+        compare_iter(nlj.NLJStream(f), actual)
 
 
 def test_attributes(dicts_path):
@@ -189,3 +177,23 @@ def test_write_num_failures():
 def test_import_json_lib():
     dst = nlj.open(six.moves.StringIO(), json_lib='json')
     assert dst._json_lib == json
+
+
+def test_flush(tmpdir):
+    fp = str(tmpdir.mkdir('test').join('data.json'))
+    with nlj.open(fp, 'w') as dst:
+        dst.write({'field1': None})
+        dst.flush()
+    with nlj.open(fp) as src:
+        assert next(src) == {'field1': None}
+
+
+def test_load(dicts_path, compare_iter):
+    with nlj.open(dicts_path) as e, open(dicts_path) as f, nlj.load(f) as a:
+        compare_iter(e, a)
+
+
+def test_dump(dicts_path, tmpdir):
+    outfile = str(tmpdir.mkdir('test').join('data.join'))
+    with nlj.open(dicts_path) as src, open(outfile, 'w') as f:
+        nlj.dump(src, f)
