@@ -24,6 +24,10 @@ Example:
 """
 
 
+import logging
+
+logger = logging.getLogger('newlinejson')
+
 from newlinejson.core import dump, dumps, load, loads, NLJStream, open, NLJReader, NLJWriter
 
 

@@ -5,10 +5,15 @@ Core components for NewlineJSON
 
 import codecs
 import json
-from io import StringIO
+import logging
 import os
-import six
 import sys
+
+import six
+from six.moves import StringIO
+
+
+logger = logging.getLogger('newlinejson')
 
 
 __all__ = ['open', 'NLJStream', 'load', 'loads', 'dump', 'dumps', 'NLJReader', 'NLJWriter']
@@ -44,21 +49,27 @@ def open(name, mode='r', open_args=None, **kwargs):
 
     if name == '-' and mode == 'r':
         stream = sys.stdin
+        logger.debug("Opening stdin")
     elif name == '-' and mode in ('w', 'a'):
         stream = sys.stdout
+        logger.debug("Opening stdout")
     elif isinstance(name, six.string_types):
         open_args.update(mode=mode)
         stream = codecs.open(name, **open_args)
+        logger.debug("Opening %s with %s", name, open_args)
     elif hasattr(name, 'close') or (hasattr(name, '__next__') or hasattr(name, 'next')):
         stream = name
+        logger.debug("Opening by assuming file-like object: %s", stream)
     else:
         raise TypeError(
             "Path must be a filepath, file-like object with .close or .__next__/next, "
             "or '-' for stdin/stdout.")
 
     if mode == 'r':
+        logger.debug("Starting read session")
         return NLJReader(stream, mode=mode, **kwargs)
     elif mode in ('w', 'a'):
+        logger.debug("Starting write session")
         return NLJWriter(stream, mode=mode, **kwargs)
     else:
         raise ValueError("Invalid mode: {}".format(mode))
@@ -213,10 +224,11 @@ class NLJReader(NLJStream):
                 line = self._json_lib.loads(next(self._stream), **self._json_args)
             except StopIteration:
                 raise
-            except Exception:
+            except Exception as e:
+                logging.exception("Encountered an error while reading: %s", str(e))
                 self._num_failures += 1
                 if not self.skip_failures:
-                    raise
+                    raise e
 
         return line
 
@@ -246,7 +258,8 @@ class NLJWriter(NLJStream):
             if six.PY2:
                 encoded = encoded.decode('utf-8')
             return self._stream.write(encoded + self._linesep)
-        except Exception:
+        except Exception as e:
+            logging.exception("Encountered an error while writing: %s", str(e))
             self._num_failures += 1
             if not self.skip_failures:
                 raise
