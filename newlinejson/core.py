@@ -314,8 +314,11 @@ def dump(collection, f, **json_args):
     """
 
     dst = NLJStream(f, 'w', **json_args)
-    for item in collection:
-        dst.write(item)
+    try:
+        for item in collection:
+            dst.write(item)
+    finally:
+        dst.close()
 
 
 def dumps(collection, **json_args):

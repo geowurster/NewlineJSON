@@ -32,6 +32,38 @@ def _nlj_rec_to_csv_rec(val):
         return json.dumps(val)
 
 
+def _csv_rec_to_nlj_rec(val):
+    """
+    Convert a line from `csv.DictReader()` NLJ with `None` instead of empty
+    fields.
+    """
+    if val == '':
+        return None
+    elif val.startswith('{'):
+        return json.loads(val)
+    else:
+        return val
+
+
+skip_failures_opt = click.option(
+    '--skip-failures / --no-skip-failures', default=False, show_default=True,
+    help="Skip records that cannot be converted.")
+
+
+def _cb_quoting(ctx, param, value):
+    """Map quoting parameter to CSV library values."""
+    if value == 'all':
+        return csv.QUOTE_ALL
+    elif value == 'minimal':
+        return csv.QUOTE_MINIMAL
+    elif value == 'none':
+        return csv.QUOTE_NONE
+    elif value == 'non-numeric':
+        return csv.QUOTE_NONNUMERIC
+    else:
+        raise click.BadParameter("Bad internal validation")
+
+
 @click.group()
 @click.version_option(nlj.__version__)
 def main():
@@ -59,7 +91,7 @@ def insp(infile, interpreter):  # A good idea borrowed from Rasterio and Fiona
             nljv=nlj.__version__, pyv='.'.join(map(str, sys.version_info[:3]))),
         "Type 'help(src)' or 'next(src)' for more information."])
 
-    with nlj.open(infile) as src:
+    with nlj.open(infile) as src:  # pragma no cover
         scope = {'src': src}
         if not interpreter:
             code.interact(banner, local=scope)
@@ -74,7 +106,8 @@ def insp(infile, interpreter):  # A good idea borrowed from Rasterio and Fiona
 @main.command()
 @click.argument('infile', type=click.File('r'), default='-')
 @click.argument('outfile', type=click.File('w'), default='-')
-def csv2nlj(infile, outfile):
+@skip_failures_opt
+def csv2nlj(infile, outfile, skip_failures):
 
     """
     Convert a CSV to newline JSON dictionaries.
@@ -82,23 +115,11 @@ def csv2nlj(infile, outfile):
 
     with nlj.open(outfile, 'w') as dst:
         for record in csv.DictReader(infile):
-
-            # Take a row from `csv.DictReader()` and prepare it for
-            # writing as newline JSON.  Empty strings are converted
-            # to `None` and all other values are passed through
-            # `json.loads()`.
-
-            out = {}
-            for k, v in record.items():
-                if isinstance(v, six.string_types) and len(v) == 0:
-                    out[k] = None
-                else:
-                    try:
-                        out[k] = json.loads(v)
-                    except ValueError:
-                        out[k] = v
-
-            dst.write(out)
+            try:
+                dst.write({k: _csv_rec_to_nlj_rec(v) for k, v in six.iteritems(record)})
+            except Exception:
+                if not skip_failures:
+                    raise
 
 
 @main.command()
@@ -106,20 +127,20 @@ def csv2nlj(infile, outfile):
 @click.argument('outfile', type=click.File('w'), default='-')
 @click.option(
     '--header / --no-header', default=True, show_default=True,
-    help="Specify whether the header should be written to the output CSV."
-)
+    help="Specify whether the header should be written to the output CSV.")
+@skip_failures_opt
 @click.option(
-    '--skip-failures / --no-skip-failures', default=False, show_default=True,
-    help="Skip records that cannot be converted."
-)
-def nlj2csv(infile, outfile, header, skip_failures):
+    '--quoting', type=click.Choice(['all', 'minimal', 'none', 'non-numeric']),
+    default='none', show_default=True,
+    help="CSV quoting style.  See the Python CSV library documentation for more info.")
+def nlj2csv(infile, outfile, header, skip_failures, quoting):
 
     """
     Convert newline JSON dictionaries to a CSV.
 
-    Defaults to reading from stdin and writing to stdout.  CSV fields are
-    derived from the first record and .  The intent is to provide a tool for
-    converting homogeneous newline delimited JSON dictionaries to a CSV.
+    Defaults to reading from `stdin` and writing to `stdout`.  CSV fields are
+    derived from the first record and `null` values are converted to empty
+    CSV fields.
     """
 
     with nlj.open(infile) as src:
@@ -133,15 +154,12 @@ def nlj2csv(infile, outfile, header, skip_failures):
 
         for record in chain([first], src):
 
-            if skip_failures:
-                record = {
-                    fld: _nlj_rec_to_csv_rec(record.get(fld)) for fld in writer.fieldnames}
-            else:
-                record = {
-                    k: _nlj_rec_to_csv_rec(v) for k, v in record.items()}
-
-            writer.writerow(record)
+            try:
+                writer.writerow({k: _nlj_rec_to_csv_rec(v) for k, v in six.iteritems(record)})
+            except Exception:
+                if not skip_failures:
+                    raise
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma no cover
     main(prog_name='newlinejson')
