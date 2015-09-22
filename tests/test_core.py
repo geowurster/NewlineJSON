@@ -15,18 +15,18 @@ import newlinejson as nlj
 
 def test_standard(dicts_path):
 
-    with nlj.open(dicts_path) as actual, \
-            open(dicts_path) as expected:
-
-        for e_line, a_line in zip(expected, actual):
-            assert json.loads(e_line) == a_line
+    with nlj.open(dicts_path) as actual:
+        with open(dicts_path) as expected:
+            for e_line, a_line in zip(expected, actual):
+                assert json.loads(e_line) == a_line
 
 
 def test_read_file_obj(dicts_path, compare_iter):
 
-    with open(dicts_path) as f, \
-            nlj.open(dicts_path) as expected:
-        compare_iter(expected, nlj.open(f))
+    with open(dicts_path) as f:
+        with nlj.open(dicts_path) as expected:
+            with nlj.open(f) as actual:
+                compare_iter(expected, actual)
 
 
 def test_dumps(dicts_path, compare_iter):
@@ -61,11 +61,11 @@ def test_negative_skiplines(dicts_path):
 
 def test_skiplines(dicts_path, compare_iter):
     sl = 2
-    with open(dicts_path) as f, \
-            nlj.open(dicts_path, skip_lines=sl) as actual:
-        for i in range(sl):
-            next(f)
-        compare_iter(nlj.NLJStream(f), actual)
+    with open(dicts_path) as f:
+        with nlj.open(dicts_path, skip_lines=sl) as actual:
+            for i in range(sl):
+                next(f)
+            compare_iter(nlj.NLJStream(f), actual)
 
 
 def test_attributes(dicts_path):
@@ -123,13 +123,13 @@ def test_read_write_exception():
 
 
 def test_skip_failures_write(dicts_path):
-    with nlj.open(dicts_path) as src, nlj.open(tempfile.NamedTemporaryFile(
-            mode='w'), 'w', skip_failures=True) as dst:
-        dst.write(next(src))
-        dst.write(next(src))
-        dst.write(nlj)
-        for line in src:
-            dst.write(line)
+    with nlj.open(dicts_path) as src:
+        with nlj.open(tempfile.NamedTemporaryFile(mode='w'), 'w', skip_failures=True) as dst:
+            dst.write(next(src))
+            dst.write(next(src))
+            dst.write(nlj)
+            for line in src:
+                dst.write(line)
 
 
 def test_declare_json_lib(dicts_path):
@@ -166,12 +166,12 @@ def test_read_num_failures():
 
 
 def test_write_num_failures():
-    with tempfile.NamedTemporaryFile(mode='r+') as f, \
-            nlj.open(f.name, 'w', skip_failures=True) as src:
-        assert src.num_failures is 0
-        src.write(json)
-        src.write(src)
-        assert src.num_failures is 2
+    with tempfile.NamedTemporaryFile(mode='r+') as f:
+        with nlj.open(f.name, 'w', skip_failures=True) as src:
+            assert src.num_failures is 0
+            src.write(json)
+            src.write(src)
+            assert src.num_failures is 2
 
 
 def test_import_json_lib():
@@ -189,11 +189,14 @@ def test_flush(tmpdir):
 
 
 def test_load(dicts_path, compare_iter):
-    with nlj.open(dicts_path) as e, open(dicts_path) as f, nlj.load(f) as a:
-        compare_iter(e, a)
+    with nlj.open(dicts_path) as e:
+        with open(dicts_path) as f:
+            with nlj.load(f) as a:
+                compare_iter(e, a)
 
 
 def test_dump(dicts_path, tmpdir):
     outfile = str(tmpdir.mkdir('test').join('data.join'))
-    with nlj.open(dicts_path) as src, open(outfile, 'w') as f:
-        nlj.dump(src, f)
+    with nlj.open(dicts_path) as src:
+        with open(outfile, 'w') as f:
+            nlj.dump(src, f)

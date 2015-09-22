@@ -172,7 +172,10 @@ class NLJStream(object):
     def __del__(self):
         """Close and flush to disk."""
         self.close()
-        return self._stream.__del__()
+        if hasattr(self._stream, '__del__'):
+            return self._stream.__del__()
+        else:
+            return None
 
     def __iter__(self):
         """Iterate over lines in the input stream."""

@@ -6,9 +6,9 @@ python -m newlinejson
 
 
 import csv
-import json
 
 from click.testing import CliRunner
+import six
 
 import newlinejson as nlj
 from newlinejson.__main__ import main, _cb_quoting
@@ -20,9 +20,9 @@ def test_csv2nlj(tmpdir, compare_iter, dicts_csv_path, dicts_path):
         'csv2nlj', dicts_csv_path, outfile
     ])
     assert result.exit_code == 0
-    with nlj.open(dicts_path) as expected,\
-            nlj.open(outfile) as actual:
-        compare_iter(expected, actual)
+    with nlj.open(dicts_path) as expected:
+        with nlj.open(outfile) as actual:
+            compare_iter(expected, actual)
 
 
 def test_nlj2csv(tmpdir, dicts_path, compare_iter):
@@ -31,8 +31,9 @@ def test_nlj2csv(tmpdir, dicts_path, compare_iter):
         'nlj2csv', dicts_path, outfile
     ])
     assert result.exit_code == 0
-    with nlj.open(dicts_path) as expected, open(outfile) as actual:
-        compare_iter(expected, csv.DictReader(actual))
+    with nlj.open(dicts_path) as expected:
+        with open(outfile) as actual:
+            compare_iter(expected, csv.DictReader(actual))
 
 
 def test_csv2nlj_nulls(tmpdir, compare_iter, dicts_csv_with_null_path, dicts_with_null_path):
@@ -47,8 +48,9 @@ def test_csv2nlj_nulls(tmpdir, compare_iter, dicts_csv_with_null_path, dicts_wit
         'csv2nlj', dicts_csv_with_null_path, outfile
     ])
     assert result.exit_code == 0
-    with nlj.open(dicts_with_null_path) as expected, nlj.open(outfile) as actual:
-        compare_iter(expected, actual)
+    with nlj.open(dicts_with_null_path) as expected:
+        with nlj.open(outfile) as actual:
+            compare_iter(expected, actual)
 
 
 def test_nlj2csv_nulls(tmpdir, dicts_with_null_path):
@@ -62,9 +64,10 @@ def test_nlj2csv_nulls(tmpdir, dicts_with_null_path):
         'nlj2csv', dicts_with_null_path, outfile
     ])
     assert result.exit_code == 0
-    with nlj.open(dicts_with_null_path) as expected, open(outfile) as actual:
-        for e, a in zip(expected, csv.DictReader(actual)):
-            assert a == {k: v if v else "" for k, v in a.items()}
+    with nlj.open(dicts_with_null_path) as expected:
+        with open(outfile) as actual:
+            for e, a in zip(expected, csv.DictReader(actual)):
+                assert a == dict((k, v if v else "") for k, v in six.iteritems(a))
 
     # Double check that None was not written to a CSV field
     with open(outfile) as f:
