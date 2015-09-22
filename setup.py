@@ -21,7 +21,7 @@ class PyTest(TestCommand):
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.pytest_args = []
+        self.pytest_args = ['tests']
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -29,7 +29,7 @@ class PyTest(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
+        # Import here, because outside the eggs aren't loaded
         import pytest
         errno = pytest.main(self.pytest_args)
         sys.exit(errno)
@@ -80,6 +80,7 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
     ],
+    cmdclass={'test': PyTest},
     description="Streaming newline delimited JSON I/O with transparent compression",
     extras_require=extras_require,
     include_package_data=True,

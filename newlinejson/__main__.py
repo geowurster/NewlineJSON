@@ -116,7 +116,8 @@ def csv2nlj(infile, outfile, skip_failures):
     with nlj.open(outfile, 'w') as dst:
         for record in csv.DictReader(infile):
             try:
-                dst.write({k: _csv_rec_to_nlj_rec(v) for k, v in six.iteritems(record)})
+                dst.write(
+                    dict((k, _csv_rec_to_nlj_rec(v)) for k, v in six.iteritems(record)))
             except Exception:
                 if not skip_failures:
                     raise
@@ -150,12 +151,13 @@ def nlj2csv(infile, outfile, header, skip_failures, quoting):
 
         writer = csv.DictWriter(outfile, first.keys(), quoting=csv.QUOTE_ALL)
         if header:
-            writer.writeheader()
+            writer.writerow(dict((fld, fld) for fld in writer.fieldnames))
 
         for record in chain([first], src):
 
             try:
-                writer.writerow({k: _nlj_rec_to_csv_rec(v) for k, v in six.iteritems(record)})
+                writer.writerow(
+                    dict((k, _nlj_rec_to_csv_rec(v)) for k, v in six.iteritems(record)))
             except Exception:
                 if not skip_failures:
                     raise
