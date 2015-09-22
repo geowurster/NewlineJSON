@@ -4,7 +4,6 @@ Unittests for newlinejson.core
 
 
 import json
-import itertools
 import os
 import tempfile
 
@@ -82,16 +81,13 @@ def test_skiplines(dicts_path):
 
 
 def test_attributes(dicts_path):
-    # stream
     with nlj.open(dicts_path) as src:
-        assert hasattr(src.stream, 'read')
-        assert src.stream.mode == src.mode
-
-    # __repr__
-    with nlj.open(dicts_path) as src:
-        assert isinstance(repr(src), six.string_types)
-        assert 'open' in repr(src) and 'Stream' in repr(src) and src.mode in repr(src)
-    assert 'closed' in repr(src) and 'Stream' in repr(src) and src.mode in repr(src)
+        assert src.num_failures is 0
+        assert src.mode == 'r'
+        assert not src.closed
+        assert src.name == dicts_path
+        assert 'open' in repr(src) and 'r' in repr(src)
+    assert 'closed' in repr(src)
 
 
 def test_open_no_with_statement(dicts_path):
@@ -132,10 +128,9 @@ def test_read_write_exception():
             src.write(tuple)
     # Read malformed JSON
     with nlj.open(tempfile.NamedTemporaryFile(mode='r+')) as src:
-        src.stream.write('{')
-        src.stream.seek(0)
-        with pytest.raises((TypeError, ValueError
-                            )):
+        src._stream.write('{')
+        src._stream.seek(0)
+        with pytest.raises((TypeError, ValueError)):
             next(src)
 
 
@@ -151,8 +146,9 @@ def test_skip_failures_write(dicts_path):
 
 def test_declare_json_lib(dicts_path):
     jlib = 'something'
-    with nlj.open(dicts_path, json_lib=jlib) as src:
-        assert src.json_lib == jlib
+    with pytest.raises(ImportError):
+        with nlj.open(dicts_path, json_lib=jlib) as src:
+            pass
 
 
 def test_write():
@@ -188,3 +184,8 @@ def test_write_num_failures():
         src.write(json)
         src.write(src)
         assert src.num_failures is 2
+
+
+def test_import_json_lib():
+    dst = nlj.open(six.moves.StringIO(), json_lib='json')
+    assert dst._json_lib == json
