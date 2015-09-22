@@ -60,7 +60,8 @@ with open(os.path.join('newlinejson', '__init__.py')) as f:
 extras_require = {
     'dev': [
         'pytest',
-        'pytest-cov'
+        'pytest-cov',
+        'wheel'
     ],
     'cli': ['click>=3.0']
 }
@@ -74,14 +75,18 @@ setup(
     classifiers=[
         'Topic :: Utilities',
         'Intended Audience :: Developers',
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: BSD License',
+        'Topic :: Text Processing',
+        'Topic :: Software Development :: Libraries',
+        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: Implementation :: PyPy'
     ],
     cmdclass={'test': PyTest},
-    description="Streaming newline delimited JSON I/O with transparent compression",
+    description="Streaming newline delimited JSON I/O.",
     extras_require=extras_require,
     include_package_data=True,
     install_requires=[

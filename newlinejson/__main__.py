@@ -4,6 +4,7 @@ Enable the CLI interface with `python -m newlinejson`.
 
 
 import code
+import codecs
 import csv
 from itertools import chain
 import json
@@ -33,10 +34,14 @@ def _nlj_rec_to_csv_rec(val):
 
 
 def _csv_rec_to_nlj_rec(val):
+
     """
     Convert a line from `csv.DictReader()` NLJ with `None` instead of empty
     fields.
     """
+
+    val = codecs.decode(val, 'unicode_escape')
+
     if val == '':
         return None
     elif val.startswith('{'):
@@ -48,6 +53,9 @@ def _csv_rec_to_nlj_rec(val):
 skip_failures_opt = click.option(
     '--skip-failures / --no-skip-failures', default=False, show_default=True,
     help="Skip records that cannot be converted.")
+json_lib_opt = click.option(
+    '--json-lib', metavar='NAME', default='json', show_default=True,
+    help="Specify which JSON library should be used for encoding and decoding.")
 
 
 def _cb_quoting(ctx, param, value):
@@ -107,13 +115,14 @@ def insp(infile, interpreter):  # A good idea borrowed from Rasterio and Fiona
 @click.argument('infile', type=click.File('r'), default='-')
 @click.argument('outfile', type=click.File('w'), default='-')
 @skip_failures_opt
-def csv2nlj(infile, outfile, skip_failures):
+@json_lib_opt
+def csv2nlj(infile, outfile, skip_failures, json_lib):
 
     """
     Convert a CSV to newline JSON dictionaries.
     """
 
-    with nlj.open(outfile, 'w') as dst:
+    with nlj.open(outfile, 'w', json_lib=json_lib) as dst:
         for record in csv.DictReader(infile):
             try:
                 dst.write(
@@ -132,9 +141,10 @@ def csv2nlj(infile, outfile, skip_failures):
 @skip_failures_opt
 @click.option(
     '--quoting', type=click.Choice(['all', 'minimal', 'none', 'non-numeric']),
-    default='none', show_default=True,
+    default='none', show_default=True, callback=_cb_quoting,
     help="CSV quoting style.  See the Python CSV library documentation for more info.")
-def nlj2csv(infile, outfile, header, skip_failures, quoting):
+@json_lib_opt
+def nlj2csv(infile, outfile, header, skip_failures, quoting, json_lib):
 
     """
     Convert newline JSON dictionaries to a CSV.
@@ -144,12 +154,12 @@ def nlj2csv(infile, outfile, header, skip_failures, quoting):
     CSV fields.
     """
 
-    with nlj.open(infile) as src:
+    with nlj.open(infile, json_lib=json_lib) as src:
 
         # Get the field names from the first record
         first = next(src)
 
-        writer = csv.DictWriter(outfile, first.keys(), quoting=csv.QUOTE_ALL)
+        writer = csv.DictWriter(outfile, first.keys(), quoting=quoting, escapechar='\\')
         if header:
             writer.writerow(dict((fld, fld) for fld in writer.fieldnames))
 

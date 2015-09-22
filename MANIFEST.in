@@ -1,7 +1,5 @@
+include CHANGES.md
 include LICENSE.txt
 include MANIFEST.in
-include README.md
-include requirements.txt
-include requirements-dev.txt
+include README.rst
 include setup.py
-recursive-include tests *.py
