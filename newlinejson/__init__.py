@@ -1,9 +1,9 @@
 """
 Streaming newline delimited JSON I/O.
 
-Calling ``newlinejson.open()`` returns a loaded instance of ``NLJStream()``,
-which generally acts like a file-like object.  See ``help(newlinejson.Stream)``
-for more information.
+Calling `newlinejson.open()` returns a loaded instance of `NLJReader()`, or
+`NLJWriter()` that acts as a file-like object.  See `help()` on each for more
+information.
 
 Example:
 
@@ -38,7 +38,7 @@ __source__ = 'https://github.com/geowurster/NewlineJSON'
 __license__ = '''
 New BSD License
 
-Copyright (c) 2014, Kevin D. Wurster
+Copyright (c) 2014-2015, Kevin D. Wurster
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

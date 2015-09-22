@@ -14,9 +14,8 @@ Streaming newline delimited JSON I/O.
 Example
 =======
 
-Calling ``newlinejson.open()`` returns a loaded instance of ``newlinejson.NLJStream()``,
-which generally acts like a file-like object.  See ``help(newlinejson.NLJStream)`` for
-more information.
+Calling ``newlinejson.open()`` returns a file-like object that behaves like
+Python's ``io.TextIOWrapper``:
 
 .. code-block:: python
 
@@ -83,10 +82,9 @@ Pretty much - this is the simplest newline delimited JSON API:
 
 But it doesn't handle failures and every time it needs to be used it has to be
 re-written, which means it needs to be packaged, which means it needs unittests,
-may as well be a little more Pythonic, and now we're back to this module.  Add in
-transparent compression (in the next version) and its much easier to just
-``import newlinejson`` and know that it will work rather than mess with a custom
-solution every time.
+may as well be a little more Pythonic, and now we're back to this module.  It's
+easier and more Pythonic to just ``import newlinejson`` and know that it will
+work rather than solve the exact same problem multiple times.
 
 
 Why is this better than MsgPack, Protobuf, or any other packed-binary format?
@@ -103,7 +101,7 @@ The goal of this module is to fill a gap in the Python ecosystem in an easy to
 use and intuitive manner, not to provide highly optimized I/O.  If Python's
 built-in JSON library isn't fast enough but newline delimited JSON is the right
 answer to your problem, one of many faster JSON libraries can be used globally with
-``newlinejson.core.JSON = module`` or by setting ``json_lib=module`` as a keyword
+``newlinejson.core.JSON_LIB = module`` or by setting ``json_lib=module`` as a keyword
 argument in ``open()``, ``load()``, etc.
 
 
@@ -140,3 +138,15 @@ Install:
     $ pip install -e .[test]
     $ py.test tests --cov newlinejson --cov-report term-missing
     $ pep8 --max-line-length=95 newlinejson
+
+
+License
+=======
+
+See ``LICENSE.txt``
+
+
+Changelog
+=========
+
+See ``CHANGES.md``
