@@ -352,9 +352,12 @@ def dumps(collection, **json_args):
     str
     """
 
-    with StringIO() as f:
+    f = StringIO()  # No __exit__ in older Python
+    try:
         with NLJWriter(f, 'w', **json_args) as dst:
             for item in collection:
                 dst.write(item)
             f.seek(0)
             return f.read()
+    finally:
+        f.close()
