@@ -24,7 +24,11 @@ Example:
 """
 
 
-from newlinejson.core import dump, dumps, load, loads, NLJStream, open
+import logging
+
+logger = logging.getLogger('newlinejson')
+
+from newlinejson.core import dump, dumps, load, loads, NLJStream, open, NLJReader, NLJWriter
 
 
 __version__ = '0.4'

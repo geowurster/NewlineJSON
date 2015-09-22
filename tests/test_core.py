@@ -54,20 +54,6 @@ def test_stream_invalid_mode(dicts_path):
             pass
 
 
-def test_negative_skiplines(dicts_path):
-    with pytest.raises(ValueError):
-        nlj.open(dicts_path, skip_lines=-1)
-
-
-def test_skiplines(dicts_path, compare_iter):
-    sl = 2
-    with open(dicts_path) as f:
-        with nlj.open(dicts_path, skip_lines=sl) as actual:
-            for i in range(sl):
-                next(f)
-            compare_iter(nlj.NLJStream(f), actual)
-
-
 def test_attributes(dicts_path):
     with nlj.open(dicts_path) as src:
         assert src.num_failures is 0
@@ -87,25 +73,25 @@ def test_open_no_with_statement(dicts_path):
 def test_io_clash(dicts_path):
 
     # Trying to read from a stream that is opened in write mode
-    with pytest.raises(OSError):
+    with pytest.raises(TypeError):
         with nlj.open(tempfile.NamedTemporaryFile(mode='w'), 'w') as src:
             next(src)
 
     # Trying to read from a closed stream
     with nlj.open(dicts_path) as src:
         pass
-    with pytest.raises(OSError):
+    with pytest.raises(ValueError):
         next(src)
 
     # Trying to write to a stream opened in read mode
     with nlj.open(tempfile.NamedTemporaryFile(mode='w')) as dst:
-        with pytest.raises(OSError):
+        with pytest.raises(AttributeError):
             dst.write([])
 
     # Trying to write to a closed stream
     with nlj.open(tempfile.NamedTemporaryFile(mode='w'), 'w') as dst:
         pass
-    with pytest.raises(OSError):
+    with pytest.raises(ValueError):
         dst.write([])
 
 
@@ -200,3 +186,13 @@ def test_dump(dicts_path, tmpdir):
     with nlj.open(dicts_path) as src:
         with open(outfile, 'w') as f:
             nlj.dump(src, f)
+
+
+def test_open_bad_mode(dicts_path):
+    # These trigger errors in slightly different but very related lines
+    with pytest.raises(ValueError):
+        with nlj.open(dicts_path, 'bad-mode') as src:
+            pass
+    with pytest.raises(ValueError):
+        with nlj.open(dicts_path, 'rb') as src:
+            pass
