@@ -26,7 +26,7 @@ def open(name, mode='r', open_args=None, **kwargs):
 
     """
     Open a file path or file-like object for I/O operations and return a loaded
-    `NLJStream()` instance.
+    `NLJReader()` or `NLJWriter` instance.
 
     Parameters
     ----------
@@ -42,7 +42,10 @@ def open(name, mode='r', open_args=None, **kwargs):
 
     Returns
     -------
-    NLJStream
+    NLJReader
+        If reading.
+    NLJWriter
+        If writing or appending.
     """
 
     open_args = open_args or {}
@@ -75,10 +78,10 @@ def open(name, mode='r', open_args=None, **kwargs):
         raise ValueError("Invalid mode: {}".format(mode))
 
 
-class NLJStream(object):
+class NLJBaseStream(object):
 
     """
-    Baseclass for performing I/O operations on a stream of newline delimited
+    Base-class for performing I/O operations on a stream of newline delimited
     JSON.  Implements common file-like object properties and methods
     """
 
@@ -198,10 +201,10 @@ class NLJStream(object):
         return self._stream.flush()
 
 
-class NLJReader(NLJStream):
+class NLJReader(NLJBaseStream):
 
     """
-    Read a stream of newline JSON.
+    Read newline JSON.
     """
 
     def __iter__(self):
@@ -235,10 +238,10 @@ class NLJReader(NLJStream):
     next = __next__
 
 
-class NLJWriter(NLJStream):
+class NLJWriter(NLJBaseStream):
 
     """
-    Write NLJ to a stream.
+    Write newline JSON.
     """
 
     def write(self, obj):
