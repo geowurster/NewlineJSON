@@ -106,20 +106,6 @@ def test_encode_json_strings(tmpdir):
     assert expected == actual
 
 
-def test_insp(dicts_path):
-    result = CliRunner().invoke(main, [
-        'insp', dicts_path
-    ])
-    assert result.exit_code == 0
-
-
-def test_insp_error():
-    result = CliRunner().invoke(main, [
-        'insp', 'bad-path'
-    ])
-    assert result.exit_code != 0
-
-
 def test_csv2nlj_failure(tmpdir):
     infile = str(tmpdir.mkdir('test-in').join('in.json'))
     outfile = str(tmpdir.mkdir('test-out').join('out.json'))
@@ -138,4 +124,4 @@ def test_cb_quoting():
     assert _cb_quoting(None, None, 'all') == csv.QUOTE_ALL
     assert _cb_quoting(None, None, 'minimal') == csv.QUOTE_MINIMAL
     assert _cb_quoting(None, None, 'none') == csv.QUOTE_NONE
-    assert _cb_quoting(None, None, 'non-numeric') == csv.QUOTE_NONNUMERIC
+    assert _cb_quoting(None, None, 'nonnumeric') == csv.QUOTE_NONNUMERIC

@@ -1,5 +1,5 @@
 """
-Unittests for newlinejson.core
+Unittests for newlinejson.io
 """
 
 
@@ -27,20 +27,6 @@ def test_read_file_obj(dicts_path, compare_iter):
         with nlj.open(dicts_path) as expected:
             with nlj.open(f) as actual:
                 compare_iter(expected, actual)
-
-
-def test_dumps(dicts_path, compare_iter):
-
-    with open(dicts_path) as f:
-        expected = f.read()
-
-    with nlj.open(dicts_path) as src:
-        actual = nlj.dumps(src)
-
-    for obj in (expected, actual):
-        assert isinstance(obj, six.string_types)
-
-    compare_iter(nlj.loads(expected), nlj.loads(actual))
 
 
 def test_open_invalid_object():
@@ -137,7 +123,8 @@ def test_write():
 
 def test_stream_bad_io_mode():
     with pytest.raises(ValueError):
-        nlj.core.NLJBaseStream(tempfile.TemporaryFile(), mode='bad_mode')
+        with nlj.open('whatever', mode='bad_mode'):
+            pass
 
 
 def test_read_num_failures():
@@ -172,20 +159,6 @@ def test_flush(tmpdir):
         dst.flush()
     with nlj.open(fp) as src:
         assert next(src) == {'field1': None}
-
-
-def test_load(dicts_path, compare_iter):
-    with nlj.open(dicts_path) as e:
-        with open(dicts_path) as f:
-            with nlj.load(f) as a:
-                compare_iter(e, a)
-
-
-def test_dump(dicts_path, tmpdir):
-    outfile = str(tmpdir.mkdir('test').join('data.join'))
-    with nlj.open(dicts_path) as src:
-        with open(outfile, 'w') as f:
-            nlj.dump(src, f)
 
 
 def test_open_bad_mode(dicts_path):

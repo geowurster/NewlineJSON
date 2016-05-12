@@ -26,16 +26,17 @@ Example:
 
 import logging
 
-logger = logging.getLogger('newlinejson')
+from newlinejson.io import open
+from newlinejson.io import NLJFile
+from newlinejson.io import NLJBytesReader
+from newlinejson.io import NLJBytesWriter
+from newlinejson.tools import load
+from newlinejson.tools import loads
+from newlinejson.tools import dump
+from newlinejson.tools import dumps
 
-from newlinejson.core import dump
-from newlinejson.core import dumps
-from newlinejson.core import load
-from newlinejson.core import loads
-from newlinejson.core import open
-from newlinejson.core import NLJBaseStream
-from newlinejson.core import NLJReader
-from newlinejson.core import NLJWriter
+
+logger = logging.getLogger(__name__)
 
 
 __version__ = '1.0'

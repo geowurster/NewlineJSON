@@ -3,13 +3,12 @@ Enable the CLI interface with `python -m newlinejson`.
 """
 
 
-import code
 import codecs
 import csv
-from itertools import chain
+import itertools as it
 import json
+import logging
 import os
-import sys
 
 import click
 import six
@@ -50,31 +49,43 @@ def _csv_rec_to_nlj_rec(val):
         return val
 
 
+def _cb_quoting(ctx, param, value):
+    """Map quoting parameter to CSV library values."""
+    try:
+        return getattr(csv, 'QUOTE_{}'.format(value.upper()))
+    except AttributeError:
+        raise click.BadParameter("Invalid quoting: {}".format(value))
+
+
+def _cb_json_lib(ctx, param, value):
+    """Import JSON library."""
+    try:
+        return nlj.tools.get_json_lib(value)
+    except ImportError:
+        raise click.BadParameter("Unrecognized JSON library: {}".format(value))
+
+
 skip_failures_opt = click.option(
     '--skip-failures / --no-skip-failures', default=False, show_default=True,
     help="Skip records that cannot be converted.")
 json_lib_opt = click.option(
     '--json-lib', metavar='NAME', default='json', show_default=True,
+    callback=_cb_json_lib,
     help="Specify which JSON library should be used for encoding and decoding.")
-
-
-def _cb_quoting(ctx, param, value):
-    """Map quoting parameter to CSV library values."""
-    if value == 'all':
-        return csv.QUOTE_ALL
-    elif value == 'minimal':
-        return csv.QUOTE_MINIMAL
-    elif value == 'none':
-        return csv.QUOTE_NONE
-    elif value == 'non-numeric':
-        return csv.QUOTE_NONNUMERIC
-    else:
-        raise click.BadParameter("Bad internal validation")
 
 
 @click.group()
 @click.version_option(nlj.__version__)
-def main():
+@click.option(
+    '--verbose', '-v',
+    count=True,
+    help="Increase verbosity.")
+@click.option(
+    '--quiet', '-q',
+    count=True,
+    help="Decrease verbosity.")
+@click.pass_context
+def main(ctx, verbose, quiet):
 
     """
     NewlineJSON commandline interface.
@@ -82,33 +93,8 @@ def main():
     Common simple ETL commands for homogeneous data.
     """
 
-
-@main.command()
-@click.argument('infile', type=click.File('r'), default='-')
-@click.option(
-    '--ipython', 'interpreter', flag_value='ipython',
-    help="Use IPython as the interpreter.")
-def insp(infile, interpreter):  # A good idea borrowed from Rasterio and Fiona
-
-    """
-    Open a file and launch a Python interpreter.
-    """
-
-    banner = os.linesep.join([
-        "NewlineJSON {nljv} Interactive Inspector (Python {pyv}).".format(
-            nljv=nlj.__version__, pyv='.'.join(map(str, sys.version_info[:3]))),
-        "Type 'help(src)' or 'next(src)' for more information."])
-
-    with nlj.open(infile) as src:  # pragma no cover
-        scope = {'src': src}
-        if not interpreter:
-            code.interact(banner, local=scope)
-        elif interpreter == 'ipython':
-            import IPython
-            IPython.InteractiveShell.banner1 = banner
-            IPython.start_ipython(argv=[], user_ns=scope)
-        else:
-            raise click.ClickException('Interpreter {} is unsupported'.format(interpreter))
+    verbosity = verbose - quiet
+    ctx.obj = {'log_level': max(10, 30 - 10 * verbosity)}
 
 
 @main.command()
@@ -116,20 +102,26 @@ def insp(infile, interpreter):  # A good idea borrowed from Rasterio and Fiona
 @click.argument('outfile', type=click.File('w'), default='-')
 @skip_failures_opt
 @json_lib_opt
-def csv2nlj(infile, outfile, skip_failures, json_lib):
+@click.pass_context
+def csv2nlj(ctx, infile, outfile, skip_failures, json_lib):
 
     """
     Convert a CSV to newline JSON dictionaries.
     """
 
-    with nlj.open(outfile, 'w', json_lib=json_lib) as dst:
-        for record in csv.DictReader(infile):
-            try:
-                dst.write(
-                    dict((k, _csv_rec_to_nlj_rec(v)) for k, v in six.iteritems(record)))
-            except Exception:
-                if not skip_failures:
-                    raise
+    logger = logging.getLogger(__name__)
+    logger.setLevel(ctx.obj['log_level'])
+
+    for record in csv.DictReader(infile):
+        try:
+            record = {
+                k: _csv_rec_to_nlj_rec(v) for k, v in six.iteritems(record)}
+            outfile.write(json_lib.dumps(record) + os.linesep)
+        except Exception:
+            if not skip_failures:
+                raise
+            else:
+                logger.exception("Skipped record: %s", record)
 
 
 @main.command()
@@ -144,7 +136,8 @@ def csv2nlj(infile, outfile, skip_failures, json_lib):
     default='none', show_default=True, callback=_cb_quoting,
     help="CSV quoting style.  See the Python CSV library documentation for more info.")
 @json_lib_opt
-def nlj2csv(infile, outfile, header, skip_failures, quoting, json_lib):
+@click.pass_context
+def nlj2csv(ctx, infile, outfile, header, skip_failures, quoting, json_lib):
 
     """
     Convert newline JSON dictionaries to a CSV.
@@ -154,23 +147,29 @@ def nlj2csv(infile, outfile, header, skip_failures, quoting, json_lib):
     CSV fields.
     """
 
-    with nlj.open(infile, json_lib=json_lib) as src:
+    logger = logging.getLogger(__name__)
+    logger.setLevel(ctx.obj['log_level'])
 
-        # Get the field names from the first record
-        first = next(src)
+    src = nlj.load(infile, json_lib=json_lib)
 
-        writer = csv.DictWriter(outfile, first.keys(), quoting=quoting, escapechar='\\')
-        if header:
-            writer.writerow(dict((fld, fld) for fld in writer.fieldnames))
+    # Get the field names from the first record
+    first = next(src)
 
-        for record in chain([first], src):
+    writer = csv.DictWriter(outfile, first.keys(), quoting=quoting, escapechar='\\')
+    if header:
+        writer.writerow(dict((fld, fld) for fld in writer.fieldnames))
 
-            try:
-                writer.writerow(
-                    dict((k, _nlj_rec_to_csv_rec(v)) for k, v in six.iteritems(record)))
-            except Exception:
-                if not skip_failures:
-                    raise
+    for record in it.chain([first], src):
+
+        try:
+            record = {
+                k: _nlj_rec_to_csv_rec(v) for k, v in six.iteritems(record)}
+            writer.writerow(record)
+        except Exception:
+            if not skip_failures:
+                raise
+            else:
+                logger.exception("Skipped record: %s", record)
 
 
 if __name__ == '__main__':  # pragma no cover
