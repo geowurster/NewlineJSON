@@ -24,10 +24,6 @@ Example:
 """
 
 
-import logging
-
-logger = logging.getLogger('newlinejson')
-
 from newlinejson.core import dump
 from newlinejson.core import dumps
 from newlinejson.core import load

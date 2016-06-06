@@ -5,15 +5,11 @@ Core components for NewlineJSON
 
 import codecs
 import json
-import logging
 import os
 import sys
 
 import six
 from six.moves import StringIO
-
-
-logger = logging.getLogger('newlinejson')
 
 
 __all__ = ['open', 'NLJBaseStream', 'load', 'loads', 'dump', 'dumps', 'NLJReader', 'NLJWriter']
@@ -52,27 +48,21 @@ def open(name, mode='r', open_args=None, **kwargs):
 
     if name == '-' and mode == 'r':
         stream = sys.stdin
-        logger.debug("Opening stdin")
     elif name == '-' and mode in ('w', 'a'):
         stream = sys.stdout
-        logger.debug("Opening stdout")
     elif isinstance(name, six.string_types):
         open_args.update(mode=mode)
         stream = codecs.open(name, **open_args)
-        logger.debug("Opening %s with %s", name, open_args)
     elif hasattr(name, 'close') or (hasattr(name, '__next__') or hasattr(name, 'next')):
         stream = name
-        logger.debug("Opening by assuming file-like object: %s", stream)
     else:
         raise TypeError(
             "Path must be a filepath, file-like object with .close or .__next__/next, "
             "or '-' for stdin/stdout.")
 
     if mode == 'r':
-        logger.debug("Starting read session")
         return NLJReader(stream, mode=mode, **kwargs)
     elif mode in ('w', 'a'):
-        logger.debug("Starting write session")
         return NLJWriter(stream, mode=mode, **kwargs)
     else:
         raise ValueError("Invalid mode: {}".format(mode))
@@ -129,7 +119,7 @@ class NLJBaseStream(object):
         json_lib : module or object
             The JSON library currently being used.
         skip_failures : bool
-            Are exceptions on read and write being logged or thrown?
+            Silently skip lines that fail on read or write.
         num_failures : int
             The number of failures encountered thus far.
         """
@@ -216,7 +206,7 @@ class NLJReader(NLJBaseStream):
         """
         Read a line from the underlying file-like object and convert it to JSON.
 
-        If skipping failures, then exceptions will be logged rather than
+        If skipping failures exceptions will be silently passed rather than
         thrown and each `next()` call will read until it successfully decodes a
         line or until it reaches the end of the file.
         """
@@ -228,7 +218,6 @@ class NLJReader(NLJBaseStream):
             except StopIteration:
                 raise
             except Exception as e:
-                logging.exception("Encountered an error while reading: %s", str(e))
                 self._num_failures += 1
                 if not self.skip_failures:
                     raise e
@@ -248,7 +237,7 @@ class NLJWriter(NLJBaseStream):
 
         """
         Write a JSON object to the underlying file-like object.  If skipping
-        failures then exceptions will be logged rather than thrown.
+        failures then exceptions will be passed rather than thrown.
 
         Parameters
         ----------
@@ -262,7 +251,6 @@ class NLJWriter(NLJBaseStream):
                 encoded = encoded.decode('utf-8')
             return self._stream.write(encoded + self._linesep)
         except Exception as e:
-            logging.exception("Encountered an error while writing: %s", str(e))
             self._num_failures += 1
             if not self.skip_failures:
                 raise
