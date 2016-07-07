@@ -102,8 +102,8 @@ def test_read_write_exception():
             src.write(tuple)
     # Read malformed JSON
     with nlj.open(tempfile.NamedTemporaryFile(mode='r+')) as src:
-        src._stream.write('{')
-        src._stream.seek(0)
+        src.stream.write('{')
+        src.stream.seek(0)
         with pytest.raises((TypeError, ValueError)):
             next(src)
 
@@ -162,7 +162,7 @@ def test_write_num_failures():
 
 def test_import_json_lib():
     dst = nlj.open(six.moves.StringIO(), json_lib='json')
-    assert dst._json_lib == json
+    assert dst.json_lib == json
 
 
 def test_flush(tmpdir):

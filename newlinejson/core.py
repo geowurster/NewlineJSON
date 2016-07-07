@@ -68,6 +68,11 @@ def open(name, mode='r', open_args=None, **kwargs):
         raise ValueError("Invalid mode: {}".format(mode))
 
 
+def get_json_lib(lib):
+    return __import__(lib) if isinstance(lib, six.string_types) \
+            else lib or JSON_LIB
+
+
 class NLJBaseStream(object):
 
     """
@@ -124,11 +129,7 @@ class NLJBaseStream(object):
             The number of failures encountered thus far.
         """
 
-        global JSON_LIB
-
-        self._json_lib = json_lib or JSON_LIB
-        if isinstance(self._json_lib, six.string_types):
-            self._json_lib = __import__(self._json_lib)
+        self.json_lib = get_json_lib(json_lib)
 
         if mode not in self.io_modes:
             raise ValueError(
@@ -136,11 +137,11 @@ class NLJBaseStream(object):
                     mode=mode, io_modes=self.io_modes))
 
         self.skip_failures = skip_failures
-        self._mode = mode
-        self._stream = stream
-        self._json_args = json_args or {}
-        self._linesep = newline
-        self._num_failures = 0
+        self.mode = mode
+        self.stream = stream
+        self.json_args = json_args or {}
+        self.linesep = newline
+        self.num_failures = 0
 
     def __repr__(self):
         return "<{io} {cname} '{name}', mode '{mode}' at {id}>".format(
@@ -149,24 +150,14 @@ class NLJBaseStream(object):
             name=self.name, mode=self.mode, id=hex(id(self)))
 
     @property
-    def num_failures(self):
-        """The number of lines that could not be read or written."""
-        return self._num_failures
-
-    @property
-    def mode(self):
-        """I/O mode - (r, w, a,)"""
-        return self._stream.mode
-
-    @property
     def closed(self):
         """Reports whether the stream is open for I/O operations."""
-        return self._stream.closed
+        return self.stream.closed
 
     @property
     def name(self):
         """Name of underlying file-like object."""
-        return self._stream.name
+        return self.stream.name
 
     def __enter__(self):
         return self
@@ -177,18 +168,18 @@ class NLJBaseStream(object):
     def __del__(self):
         """Close and flush to disk."""
         self.close()
-        if hasattr(self._stream, '__del__'):
-            return self._stream.__del__()
+        if hasattr(self.stream, '__del__'):
+            return self.stream.__del__()
         else:
             return None
 
     def close(self):
         """Close the stream and flush to disk."""
-        return self._stream.close()
-    
+        return self.stream.close()
+
     def flush(self):
         """Flush the buffer to disk."""
-        return self._stream.flush()
+        return self.stream.flush()
 
 
 class NLJReader(NLJBaseStream):
@@ -214,11 +205,11 @@ class NLJReader(NLJBaseStream):
         line = None
         while line is None:
             try:
-                line = self._json_lib.loads(next(self._stream), **self._json_args)
+                line = self.json_lib.loads(next(self.stream), **self.json_args)
             except StopIteration:
                 raise
             except Exception as e:
-                self._num_failures += 1
+                self.num_failures += 1
                 if not self.skip_failures:
                     raise e
 
@@ -246,12 +237,12 @@ class NLJWriter(NLJBaseStream):
         """
 
         try:
-            encoded = self._json_lib.dumps(obj, **self._json_args)
+            encoded = self.json_lib.dumps(obj, **self.json_args)
             if six.PY2:
                 encoded = encoded.decode('utf-8')
-            return self._stream.write(encoded + self._linesep)
+            return self.stream.write(encoded + self.linesep)
         except Exception as e:
-            self._num_failures += 1
+            self.num_failures += 1
             if not self.skip_failures:
                 raise
 
@@ -302,7 +293,7 @@ def dump(collection, f, **json_args):
     """
     Use `open()` instead.  Provided to match the builtin `json` library's
     functionality.
-    
+
     Dump a collection of JSON objects into a file.
 
     Parameters
