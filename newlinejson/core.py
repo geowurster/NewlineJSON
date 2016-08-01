@@ -202,18 +202,15 @@ class NLJReader(NLJBaseStream):
         line or until it reaches the end of the file.
         """
 
-        line = None
-        while line is None:
+        while True:
             try:
-                line = self.json_lib.loads(next(self.stream), **self.json_args)
+                return self.json_lib.loads(next(self.stream), **self.json_args)
             except StopIteration:
                 raise
             except Exception as e:
                 self.num_failures += 1
                 if not self.skip_failures:
                     raise e
-
-        return line
 
     next = __next__
 
