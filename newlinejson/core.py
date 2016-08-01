@@ -27,8 +27,7 @@ def open(name, mode='r', open_args=None, **kwargs):
     Parameters
     ----------
     name : str or file
-        Input file path or file-like object.  File-like objects are only
-        validated by checking for `next/__next__()` and `close()` methods.
+        Input file path or file-like object.
     mode : str, optional
         I/O mode.  See `NLJStream()` for a list of options.  Think file-like.
     open_args : dict or None, optional
@@ -46,19 +45,11 @@ def open(name, mode='r', open_args=None, **kwargs):
 
     open_args = open_args or {}
 
-    if name == '-' and mode == 'r':
-        stream = sys.stdin
-    elif name == '-' and mode in ('w', 'a'):
-        stream = sys.stdout
-    elif isinstance(name, six.string_types):
+    if isinstance(name, six.string_types):
         open_args.update(mode=mode)
         stream = codecs.open(name, **open_args)
-    elif hasattr(name, 'close') or (hasattr(name, '__next__') or hasattr(name, 'next')):
-        stream = name
     else:
-        raise TypeError(
-            "Path must be a filepath, file-like object with .close or .__next__/next, "
-            "or '-' for stdin/stdout.")
+        stream = name
 
     if mode == 'r':
         return NLJReader(stream, mode=mode, **kwargs)

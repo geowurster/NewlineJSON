@@ -43,11 +43,6 @@ def test_dumps(dicts_path, compare_iter):
     compare_iter(nlj.loads(expected), nlj.loads(actual))
 
 
-def test_open_invalid_object():
-    with pytest.raises(TypeError):
-        nlj.open(1)
-
-
 def test_stream_invalid_mode(dicts_path):
     with pytest.raises(ValueError):
         with nlj.open(dicts_path, mode='_') as src:
