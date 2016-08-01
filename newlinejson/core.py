@@ -308,7 +308,7 @@ def dumps(collection, **json_args):
     Dump a collection of JSON objects into a string.  Primarily included to
     match the `json` library's functionality.  This may be more appropriate:
 
-        >>> os.linesep.join(list(map(json.dumps, collection))
+        >>> os.linesep.join(map(json.dumps, collection))
 
     Parameters
     ----------
