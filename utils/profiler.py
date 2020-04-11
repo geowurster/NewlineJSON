@@ -91,7 +91,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 2:
         print("ERROR: Too many arguments")
         sys.exit(1)
-    elif len(sys.argv) is 1:
+    elif len(sys.argv) == 1:
         infile = os.path.join('sample-data', '10k.json.gz')
     else:
         infile = sys.argv[1]

@@ -56,7 +56,7 @@ def test_stream_invalid_mode(dicts_path):
 
 def test_attributes(dicts_path):
     with nlj.open(dicts_path) as src:
-        assert src.num_failures is 0
+        assert src.num_failures == 0
         assert src.mode == 'r'
         assert not src.closed
         assert src.name == dicts_path
@@ -145,19 +145,19 @@ def test_read_num_failures():
         f.write('{' + os.linesep + ']')
         f.seek(0)
         with nlj.open(f.name, skip_failures=True) as src:
-            assert src.num_failures is 0
+            assert src.num_failures == 0
             for row in src:
                 pass
-            assert src.num_failures is 2
+            assert src.num_failures == 2
 
 
 def test_write_num_failures():
     with tempfile.NamedTemporaryFile(mode='r+') as f:
         with nlj.open(f.name, 'w', skip_failures=True) as src:
-            assert src.num_failures is 0
+            assert src.num_failures == 0
             src.write(json)
             src.write(src)
-            assert src.num_failures is 2
+            assert src.num_failures == 2
 
 
 def test_import_json_lib():
